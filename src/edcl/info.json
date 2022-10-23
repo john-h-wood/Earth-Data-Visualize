@@ -1,0 +1,308 @@
+{
+    "directory": "/Volumes/LaCie/SURF/data copy",
+    "projections": [
+        "Lambert",
+        "Plate Carree",
+        "Robinson"
+    ],
+    "graph_styles": [
+        "quiver",
+        "heat",
+        "contour"
+    ],
+    "graph_out_modes": [
+        "show",
+        "save",
+        "fig"
+    ],
+    "datasets": [
+        {
+            "directory": "ascat_winds",
+            "name": "ASCATa",
+            "is_unified": true,
+            "file_prefix": "ascata",
+            "file_suffix": "natl",
+            "variables": [
+                {
+                    "name": "Wind speed (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind dir (deg)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "wd_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 2,
+                    "key": null,
+                    "equation": "polar_0_1",
+                    "file_identifier": null
+                }
+            ]
+        },
+        {
+            "directory": "ascat_winds",
+            "name": "ASCATb",
+            "is_unified": true,
+            "file_prefix": "ascatb",
+            "file_suffix": "natl",
+            "variables": [
+                {
+                    "name": "Wind speed (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind dir (deg)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "wd_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 2,
+                    "key": null,
+                    "equation": "polar_0_1",
+                    "file_identifier": null
+                }
+            ]
+        },
+        {
+            "directory": "ascat_winds",
+            "name": "ASCATa",
+            "is_unified": true,
+            "file_prefix": "ascata",
+            "file_suffix": "natl",
+            "variables": [
+                {
+                    "name": "Wind speed (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind dir (deg)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "wd_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 2,
+                    "key": null,
+                    "equation": "polar_0_1",
+                    "file_identifier": null
+                }
+            ]
+        },
+        {
+            "directory": "ccmp_winds",
+            "name": "CCMP",
+            "is_unified": true,
+            "file_prefix": "ccmp",
+            "file_suffix": "natl",
+            "variables": [
+                {
+                    "name": "Wind 10m u",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "u10m_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind 10m v",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "v10m_ts",
+                    "equation": null,
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 2,
+                    "key": null,
+                    "equation": "component_0_1",
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind spd (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 3,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": null
+                }
+            ]
+        },
+        {
+            "directory": "ecoa",
+            "name": "ECOA",
+            "is_unified": false,
+            "file_prefix": "ecoa",
+            "file_suffix": "spna",
+            "variables": [
+                {
+                    "name": "Wind 10m u",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "u10m_ts",
+                    "equation": null,
+                    "file_identifier": "u10m"
+                },
+                {
+                    "name": "Wind 10m v",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "v10m_ts",
+                    "equation": null,
+                    "file_identifier": "v10m"
+                },
+                {
+                    "name": "Temp 2m",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 2,
+                    "key": "t2m_ts",
+                    "equation": null,
+                    "file_identifier": "t2m"
+                },
+                {
+                    "name": "SLP (mB)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 3,
+                    "key": "slp_ts",
+                    "equation": null,
+                    "file_identifier": "slp"
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 4,
+                    "key": null,
+                    "equation": "component_0_1",
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind spd (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 5,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": "ws10m"
+                }
+            ]
+        },
+        {
+            "directory": "era5",
+            "name": "ERA5",
+            "is_unified": false,
+            "file_prefix": "era5",
+            "file_suffix": "natl",
+            "variables": [
+                {
+                    "name": "Wind 10m u",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 0,
+                    "key": "u10m_ts",
+                    "equation": null,
+                    "file_identifier": "u10m"
+                },
+                {
+                    "name": "Wind 10m v",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 1,
+                    "key": "v10m_ts",
+                    "equation": null,
+                    "file_identifier": "v10m"
+                },
+                {
+                    "name": "Temp 2m",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 2,
+                    "key": "t2m_ts",
+                    "equation": null,
+                    "file_identifier": "t2m"
+                },
+                {
+                    "name": "SLP (mB)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 3,
+                    "key": "slp_ts",
+                    "equation": null,
+                    "file_identifier": "slp"
+                },
+                {
+                    "name": "Wind",
+                    "kind": "vector",
+                    "is_combo": true,
+                    "identifier": 4,
+                    "key": null,
+                    "equation": "component_0_1",
+                    "file_identifier": null
+                },
+                {
+                    "name": "Wind spd (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": 5,
+                    "key": "ws_ts",
+                    "equation": null,
+                    "file_identifier": "ws10m"
+                },
+                {
+                    "name": "Wind dir (deg)",
+                    "kind": "scalar",
+                    "is_combo": true,
+                    "identifier": 6,
+                    "key": null,
+                    "equation": "direction_0_1",
+                    "file_identifier": null
+                }
+            ]
+        }
+    ]
+}
