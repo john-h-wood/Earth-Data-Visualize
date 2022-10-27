@@ -388,55 +388,6 @@ class DataCollection(Graphable):
     def get_vector_dimension(self) -> int:
         return len(self.data)
 
-@FutureWarning
-class CombinedDataCollection:
-
-    def __init__(self, data_collections: tuple[DataCollection, ...]):
-        self.data_collections = data_collections
-        self.time_lengths = tuple([dc.get_time_length() for dc in self.data_collections])
-        self.latitude = data_collections[0].latitude
-        self.longitude = data_collections[0].longitude
-
-    def __str__(self):
-        return f'CombinedDataCollection of {_iterable_to_words(tuple([str(dc) for dc in self.data_collections]))}'
-
-    def get_time_length(self) -> int:
-        return sum(self.time_lengths)
-
-    def get_time_title(self, time_index) -> str:
-        dc_idx, time_idx = self._convert_time_index(time_index)
-        return self.data_collections[dc_idx].get_time_title(time_idx)
-
-    def get_limits(self) -> LIMIT_TYPE:
-        return _maximal_limits(tuple([dc.get_limits() for dc in self.data_collections]))
-
-    def get_component(self, time_index, component_index) -> ArrayLike:
-        if time_index is None:
-            return np.concatenate([dc.get_component(None, component_index) for dc in self.data_collections])
-
-        dc_idx, time_idx = self._convert_time_index(time_index)
-        return self.data_collections[dc_idx].get_component(time_idx, component_index)
-
-    def get_coordinate_value(self, time_index, component_index, latitude, longitude) -> ArrayLike:
-        dc_idx, time_idx = self._convert_time_index(time_index)
-        return self.data_collections[dc_idx].get_coordinate_value(time_idx, component_index, latitude, longitude)
-
-    def get_vector_dimension(self) -> int:
-        return self.data_collections[0].get_vector_dimension()
-
-    def _convert_time_index(self, time_index) -> tuple[int, int]:
-        if time_index >= self.get_time_length():
-            raise IndexError('Time index too large.')
-
-        data_collection_idx = 0
-
-        for dc in self.data_collections:
-            if time_index < dc.get_time_length():
-                return data_collection_idx, time_index
-            else:
-                data_collection_idx += 1
-                time_index -= dc.get_time_length()
-
 
 # ======================== CONSTANTS AND GLOBALS  ======================================================================
 def init_load_info() -> Info:
@@ -466,6 +417,7 @@ def _function_call():
 
 
 info = init_load_info()
+
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
           'November', 'December']
 RADIUS_OF_EARTH = 6_371  # km
@@ -507,7 +459,7 @@ def _month_convert(value: str | int) -> str | int:
         return MONTHS[value - 1]
 
 
-def _iterable_to_words(values: tuple) -> str:
+def iterable_to_words(values: tuple) -> str:
     """
     Returns a formatted string representation of a tuple of elements.
 
@@ -1316,7 +1268,7 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
         gl.bottom_labels = False
 
         if titles is None:
-            title = _iterable_to_words(tuple([f'{g.get_time_title(time_index)} ({style})' for g, style in zip(
+            title = iterable_to_words(tuple([f'{g.get_time_title(time_index)} ({style})' for g, style in zip(
                 graphables, styles)]))
         else:
             title = titles[time_index]
@@ -1806,16 +1758,27 @@ def refine_area_to_illustration(path_collection: PathCollection, point_condition
                           path_collection.title_suffix + ' (refined)', path_collection.time_stamps)
 
 
+# ======================== ATMOSPHERIC PHYSICS CONVENTIONS =============================================================
+def get_winter_year(time: TIME_TYPE) -> int:
+    year, month, day, hour = time
+    if month is None or year is None:
+        raise ValueError('The year and months must not be None.')
+    if month in (11, 12):
+        return year + 1
+    elif month in (1, 2, 3, 4):
+        return year
+    else:
+        raise ValueError('The given month is not recognized as a winter month')
+
+
 # ======================== MAIN ========================================================================================
 def example_function(lat, lon) -> bool:
     return True
 
 
 def main():
-    limits = (40, 68, -60, -10)
-    projection = get_projection_name('Lambert', limits)
-    era5 = get_dataset_name('ERA5')
-    print(info)
+    limits, projection = get_defaults()
+    print(get_winter_year((1980, 1, None, None)))
 
 
 if __name__ == '__main__':
