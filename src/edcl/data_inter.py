@@ -33,10 +33,6 @@ Credits
     Calculating contour areas adapted from https://stackoverflow.com/questions/48634934/contour-area-calculation-using-
     matplotlib-path by Thomas Kühn. Accessed July 23, 2022
 
-TODO: Ideas:
-- Auto range info (e.g. what years for April?)
-
-
 """
 
 import datetime
@@ -75,7 +71,7 @@ class Variable:
     """
 
     def __init__(self, name: str, kind: str, is_combo: bool, identifier: int, key: Union[str, None], equation: Union[
-        str, None], file_identifier: Union[str, None]) -> None:
+                 str, None], file_identifier: Union[str, None]) -> None:
         self.name = name
         self.kind = kind
         self.is_combo = is_combo
@@ -107,7 +103,7 @@ class Dataset:
     """
 
     def __init__(self, directory: str, name: str, is_unified: bool, file_prefix: str, file_suffix: str, variables:
-    list[Variable]) -> None:
+                 list[Variable]) -> None:
         self.directory = directory
         self.name = name
         self.is_unified = is_unified
@@ -349,19 +345,19 @@ class PathCollection(Graphable):
         coo_index, latitude, longitude = _get_coordinate_information(self.dataset, self.get_limits())
         area_grid = _compute_area_grid(latitude, longitude)
 
-        is_containted = list()
+        is_contained = list()
 
         for lat in latitude:
             for lon in longitude:
                 if self.contains_point(time_index, (lat, lon)):
                     if point_condition is not None:
-                        is_containted.append(int(point_condition(lat, lon)))
+                        is_contained.append(int(point_condition(lat, lon)))
                     else:
-                        is_containted.append(1)
+                        is_contained.append(1)
                 else:
-                    is_containted.append(0)
+                    is_contained.append(0)
 
-        is_contained = np.reshape(is_containted, (len(latitude), len(longitude)))
+        is_contained = np.reshape(is_contained, (len(latitude), len(longitude)))
         return float(np.sum(np.multiply(is_contained, area_grid)))
 
     def get_component(self, time_index: int) -> Path:
@@ -507,6 +503,7 @@ class DataCollection(Graphable):
 
         if time_index >= self.get_time_length():
             raise ValueError('The given time index is too large.')
+        # noinspection PyTypeChecker
         return self.data[component_index][time_index, lat_idx, lon_idx]
 
     def get_vector_dimension(self) -> int:
@@ -972,7 +969,7 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable] = None)
     """
     Returns a sorted list of months for which any data, or a specific variable, is available.
 
-    If the variable is None, then months for which any data is available are inncluded. Otherwise, only months which
+    If the variable is None, then months for which any data is available are included. Otherwise, only months which
     have some data for the variable are included.
 
     Args:
@@ -1621,7 +1618,7 @@ def plot_point_data_over_time(data_collection: DataCollection, title: Optional[s
         'font.size': font_size
     })
 
-    fig = plt.figure(figsize=size)
+    # fig = plt.figure(figsize=size)
     ax = plt.axes()
 
     if title is None:
@@ -1934,12 +1931,12 @@ def contour_size_data_collection(data_collection: DataCollection, contour: float
 
         # determine the area of each path
         for path in paths:
-            is_containted = list()
+            is_contained = list()
             for lat in data_collection.latitude:
                 for lon in data_collection.longitude:
-                    is_containted.append(int(path.contains_point((lon, lat))))
+                    is_contained.append(int(path.contains_point((lon, lat))))
 
-            is_contained = np.reshape(is_containted, data_collection.spread)
+            is_contained = np.reshape(is_contained, data_collection.spread)
             area = np.sum(np.multiply(is_contained, area_grid))
             areas.append(area)
             text_report += (str(area) + '\n')
@@ -2040,7 +2037,7 @@ def refine_area_to_illustration(path_collection: PathCollection, point_condition
     """
     Illustrates a refined path.
 
-    The point_condition takes in a point (latitude, lonngitude pair) and returns a boolean representing whetherr that
+    The point_condition takes in a point (latitude, longitude pair) and returns a boolean representing whether that
     point should be shown.
 
     The returned DataCollection has 1's where the point meets the point condition and 0's otherwise.
@@ -2059,6 +2056,7 @@ def refine_area_to_illustration(path_collection: PathCollection, point_condition
     for time_idx in range(path_collection.get_time_length()):
         for lat_idx, lat in enumerate(latitude):
             for lon_idx, lon in enumerate(longitude):
+                # noinspection PyTypeChecker
                 if path_collection.contains_point(time_idx, (lat, lon)) and point_condition(lat, lon):
                     show_points[time_idx, lat_idx, lon_idx] = 1
 
