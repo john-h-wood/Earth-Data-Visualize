@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 # Constants
-MINIMUM_COVERAGES = (0.5, 0.8, 0.9)
+MINIMUM_COVERAGES = (0.99,)
 
 # This script plots the frequency of majority coverage over years
 relative_points = di.load_pickle('/Volumes/LaCie/SURF/Code/data_vis_6/pickles/relative_points.pickle')

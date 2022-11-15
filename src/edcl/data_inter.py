@@ -1,3 +1,44 @@
+"""
+The data interpretation (data_module) manages all interactions with data.
+
+The module uses info.json to read and store metadata and contains the definitions of the Variable, Dataset,
+Info and Data Collection classes. These classes, and the functions in this module, are to be used either by scripts
+or GUIs to interact with Earth data.
+
+A functional and object-oriented style is used for maintainability.
+
+Usage of this module with most often start with the creation of a DataCollection object. get_data_collection_names is
+particularly useful for this. Other functions, like get_years are useful to find available data. From there,
+statistical methods can be used to generate new data collections. Plotting is performed with plot_data_collection.
+
+General Documentation:
+    All coordinate limits formatted as (lat_min, lat_max, lon_min, lon_max).
+
+    All times tuples (not simple year/month/day/hour integers) formatted as (year, month, day, hour). Each element
+    can be None to specify a period of time:
+
+    - year is None and month is not None: data for the given month over all available years.
+    - year is None:                       data over all available years.
+    - month is None:                      data over the given year.
+    - day is None:                        data over the given month.
+    - hour is None:                       data over the given day.
+
+Credits
+    JSON serializing and deserializing from https://yuchen52.medium.com/serialize-and-deserialize-complex-json-in-python
+    -205ecc636caa by Yuchen Z. Accessed June 13, 2022
+
+    Reshaping numpy array to compute percentileofsocre without nested for loops from https://stackoverflow.com/questions
+    /48650645/how-to-calculate-percentile-of-score-along-z-axis-of-3d-array by KRKirov. Accessed June 23, 2022
+
+    Calculating contour areas adapted from https://stackoverflow.com/questions/48634934/contour-area-calculation-using-
+    matplotlib-path by Thomas Kühn. Accessed July 23, 2022
+
+TODO: Ideas:
+- Auto range info (e.g. what years for April?)
+
+
+"""
+
 import datetime
 import json
 import pickle
@@ -19,48 +60,6 @@ from matplotlib.path import Path
 from numpy.typing import ArrayLike
 from scipy.stats import percentileofscore
 
-"""
-The data interpretation (data_module) manages all interactions with data.
-
-The module uses info.json to read and store metadata and contains the definitions of the Variable, Dataset, 
-Info and Data Collection classes. These classes, and the functions in this module, are to be used either by scripts 
-or GUIs to interact with Earth data.
-
-A functional and object-oriented style is used for maintainability.
-
-Usage of this module with most often start with the creation of a DataCollection object. get_data_collection_names is
-particularly useful for this. Other functions, like get_years are useful to find available data. From there, 
-statistical methods can be used to generate new data collections. Plotting is performed with plot_data_collection.
-
-General Documentation:
-    All coordinate limits formatted as (lat_min, lat_max, lon_min, lon_max).
-    
-    All times tuples (not simple year/month/day/hour integers) formatted as (year, month, day, hour). Each element 
-    can be None to specify a period of time:
-    
-    - year is None and month is not None: data for the given month over all available years.
-    - year is None:                       data over all available years.
-    - month is None:                      data over the given year.
-    - day is None:                        data over the given month.
-    - hour is None:                       data over the given day.
-
-Credits
-    JSON serializing and deserializing from https://yuchen52.medium.com/serialize-and-deserialize-complex-json-in-python
-    -205ecc636caa by Yuchen Z. Accessed June 13, 2022
-    
-    Reshaping numpy array to compute percentileofsocre without nested for loops from https://stackoverflow.com/questions
-    /48650645/how-to-calculate-percentile-of-score-along-z-axis-of-3d-array by KRKirov. Accessed June 23, 2022
-    
-    Calculating contour areas adapted from https://stackoverflow.com/questions/48634934/contour-area-calculation-using-
-    matplotlib-path by Thomas Kühn. Accessed July 23, 2022
-    
-TODO: Ideas:
-- Auto range info (e.g. what years for April?)
-
-    
-
-"""
-
 POINT_TYPE = tuple[float, float]
 POINT_INDEX_TYPE = tuple[int, int]
 LIMIT_TYPE = tuple[float, float, float, float]
@@ -75,32 +74,8 @@ class Variable:
     Class representing a variable and its metadata, including type, name, etc.
     """
 
-    # @staticmethod
-    # def __validate_attributes(is_combo: bool, equation: str, file_identifier: str) -> None:
-    #     """ Checks the validity of parameters, namely for inconsistencies arising from combo variables.
-    #
-    #     A combo variable must have an associated equation and no file identifiers. Only combo variables should have
-    #     equations. A ValueError is raised if the given parameters do not meet these conditions.
-    #
-    #     Args:
-    #         is_combo: Whether the variable is a combo variable.
-    #         equation: The variable's equation equation. Possibly None.
-    #         file_identifier: The variable's file identifier. Possibly None
-    #
-    #     Returns:
-    #         None.
-    #
-    #     Raises:
-    #         ValueError: If the parameters are not valid.
-    #
-    #     """
-    #     if is_combo == (equation is None) or (is_combo and file_identifier is not None):
-    #         raise ValueError('Combo variables, and only those variables, must have equations. Combo variables cannot '
-    #                          'have file identifiers')
-
     def __init__(self, name: str, kind: str, is_combo: bool, identifier: int, key: Union[str, None], equation: Union[
         str, None], file_identifier: Union[str, None]) -> None:
-        # Variable.__validate_attributes(is_combo, equation, file_identifier)
         self.name = name
         self.kind = kind
         self.is_combo = is_combo
@@ -192,6 +167,11 @@ class Info:
 
 
 class Graphable(ABC):
+    """
+    Abstract base class for a graphable object. These have data with spatial and time limits, and titles for each
+    time stamp.
+    """
+
     @abstractmethod
     def get_time_length(self) -> float:
         ...
@@ -206,9 +186,12 @@ class Graphable(ABC):
 
 
 class PointCollection(Graphable):
+    """
+    Class storing all information for a point, including dataset, variable, time, position over time, etc.
+    """
     def __init__(self, dataset: Dataset, variable: Variable, time: TIME_TYPE, latitudes: tuple[float, ...],
-                 longitudes: tuple[float, ...], title_prefix: str, title_suffix: str, time_stamps: Optional[tuple[
-                 TIME_TYPE, ...]]):
+                 longitudes: tuple[float, ...], title_prefix: str, title_suffix: str,
+                 time_stamps: Optional[tuple[TIME_TYPE, ...]]):
         self.dataset = dataset
         self.variable = variable
         self.time = time
@@ -231,19 +214,52 @@ class PointCollection(Graphable):
         return f'{self.title_prefix}{_time_suffix(self.time)}{self.title_suffix}'
 
     def get_time_length(self) -> int:
+        """
+        The time length of the point data.
+        Returns:
+            The time length.
+
+        """
         return len(self.latitudes)
 
     def get_time_title(self, time_index) -> str:
+        """
+        The point title for a given time.
+        Args:
+            time_index: The time index.
+
+        Returns:
+            The time title.
+
+        """
         return f'{self.title_prefix}{_time_suffix(self.time_stamps[time_index])}{self.title_suffix}'
 
     def get_limits(self) -> LIMIT_TYPE:
+        """
+        The spatial limits of the point. These are the maximal limits over time.
+        Returns:
+            The limits.
+
+        """
         return min(self.latitudes), max(self.latitudes), min(self.longitudes), max(self.longitudes)
 
-    def get_component(self, time_index):
+    def get_component(self, time_index) -> POINT_TYPE:
+        """
+        The value of the point at a certain time.
+        Args:
+            time_index:  The time index.
+
+        Returns:
+            The value of the point.
+
+        """
         return self.latitudes[time_index], self.longitudes[time_index]
 
 
 class PathCollection(Graphable):
+    """
+    Class storing all information for a path, including dataset, variable, time, path points over time, etc.
+    """
     def __init__(self, dataset: Dataset, variable: Variable, time: TIME_TYPE, paths: tuple[Path, ...], title_prefix:
                  str, title_suffix: str, time_stamps: Optional[tuple[TIME_TYPE, ...]]):
         self.dataset = dataset
@@ -266,12 +282,33 @@ class PathCollection(Graphable):
         return f'{self.title_prefix}{_time_suffix(self.time)}{self.title_suffix}'
 
     def get_time_length(self) -> int:
+        """
+        The time length of the point data.
+        Returns:
+            The time length.
+
+        """
         return len(self.paths)
 
     def get_time_title(self, time_index) -> str:
+        """
+        The title of the point at a certain time.
+        Args:
+            time_index: The time index.
+
+        Returns:
+            The title.
+
+        """
         return f'{self.title_prefix}{_time_suffix(self.time_stamps[time_index])}{self.title_suffix}'
 
     def get_limits(self) -> LIMIT_TYPE:
+        """
+        The spatial limits of the point. These are the maximal limits over time.
+        Returns:
+            The spatial limits.
+
+        """
         limits = list()
         for path in self.paths:
             ex = path.get_extents()
@@ -280,10 +317,34 @@ class PathCollection(Graphable):
         return _maximal_limits(tuple(limits))
 
     def contains_point(self, time_index: int, point: POINT_TYPE) -> bool:
+        """
+        Whether the path, at a certain time, contains a point.
+        Args:
+            time_index: The time index.
+            point: The point.
+
+        Returns:
+            Whether the point is contained.
+
+        """
         lat, lon = point
         return self.paths[time_index].contains_point((lon, lat))
 
     def get_area(self, time_index: int, point_condition: Optional[Callable[[float, float], bool]]) -> float:
+        """
+        The area of the path at a given time, perhaps refined to include only those points meeting a condition.
+
+        The optional point_condition parameter is a function which determines whether each point is included in the
+        area calculation. Eliminating points is referred to as 'refining' the area. Each point has an area that is
+        approximated using spherical integration, with latitude and longitude values obtained from the path's dataset.
+        Args:
+            time_index: The time index.
+            point_condition: The point_conditions. Possibly None.
+
+        Returns:
+            The (possibly refined) area.
+
+        """
 
         coo_index, latitude, longitude = _get_coordinate_information(self.dataset, self.get_limits())
         area_grid = _compute_area_grid(latitude, longitude)
@@ -304,11 +365,23 @@ class PathCollection(Graphable):
         return float(np.sum(np.multiply(is_contained, area_grid)))
 
     def get_component(self, time_index: int) -> Path:
+        """
+        The path at a given time.
+        Args:
+            time_index: The time index.
+
+        Returns:
+            The path.
+
+        """
         return self.paths[time_index]
 
 
 class DataCollection(Graphable):
-
+    """
+    Class storing all information for certain data, including its dataset, variable, time, etc. This might,
+    for example, store wind speed over time for a square region on the Earth.
+    """
     def __init__(self, dataset: Dataset, variable: Variable, time: TIME_TYPE, limits: Optional[LIMIT_TYPE],
                  data: DATA_TYPE, latitude: ArrayLike, longitude: ArrayLike, title_prefix: str, title_suffix: str,
                  time_stamps: Optional[tuple[TIME_TYPE]]):
@@ -346,15 +419,49 @@ class DataCollection(Graphable):
         return f'{self.title_prefix}{_time_suffix(self.time)}{self.title_suffix}'
 
     def get_time_length(self) -> int:
+        """
+        The time length of the data.
+        Returns:
+            The time length.
+
+        """
         return self.shape[0]
 
     def get_time_title(self, time_index) -> str:
+        """
+        The title of the data at a certain time.
+        Args:
+            time_index: The time index.
+
+        Returns:
+            The title.
+
+        """
         return f'{self.title_prefix}{_time_suffix(self.time_stamps[time_index])}{self.title_suffix}'
 
     def get_limits(self) -> LIMIT_TYPE:
+        """
+        The spatial limits of the data. These are the maximal limits over time.
+        Returns:
+            The limits.
+
+        """
         return self.limits
 
     def get_component(self, time_index, component_index) -> ArrayLike:
+        """
+        A certain component of the data at a certain time.
+        Examples:
+            If the DataCollection is storing wind vectors, component index 0 might be the horizontal component while
+            index 1 might be the vertical component.
+        Args:
+            time_index: The time index.
+            component_index: The component index.
+
+        Returns:
+            The data component.
+
+        """
         if component_index >= len(self.data):
             raise ValueError('The given component index is too large.')
 
@@ -366,6 +473,23 @@ class DataCollection(Graphable):
         return self.data[component_index][time_index]
 
     def get_coordinate_value(self, time_index, component_index, latitude, longitude) -> ArrayLike:
+        """
+        The value of the data for a certain component, time, and position.
+        Args:
+            time_index: The time index.
+            component_index: The component index.
+            latitude: The latitude.
+            longitude: The longitude.
+
+        Returns:
+            The data value.
+
+        Raises:
+            ValueError: No data for the given coordinates.
+            ValueError: The given component index is too large.
+            ValueError: The given time index is too large.
+
+        """
         lat_idx = np.asarray(self.latitude == latitude).nonzero()[0]
         lon_idx = np.asarray(self.longitude == longitude).nonzero()[0]
 
@@ -386,6 +510,11 @@ class DataCollection(Graphable):
         return self.data[component_index][time_index, lat_idx, lon_idx]
 
     def get_vector_dimension(self) -> int:
+        """
+        The number of components for the data.
+        Returns: The number of components.
+
+        """
         return len(self.data)
 
 
@@ -429,14 +558,6 @@ function_calls = 0
 
 
 # ======================== USEFUL FUNCTIONS (CONVERT, ETC) =============================================================
-def get_defaults() -> tuple[LIMIT_TYPE, ccrs.Projection]:
-    limits = (40, 68, -60, -10)
-    if 'Lambert' in info.projections:
-        return limits, get_projection_name('Lambert', limits)
-    else:
-        raise NameError('The default projection, Lambert, is not available according to info.json.')
-
-
 def _month_convert(value: str | int) -> str | int:
     """
     Converts a month number to a month name and vice-versa.
@@ -554,6 +675,18 @@ def _time_suffix(time: TIME_TYPE) -> str:
 
 
 def _time_stamps_to_filenames(time_stamps: tuple[TIME_TYPE, ...]) -> tuple[str]:
+    """
+    Converts a tuple of time stamps to file names.
+
+    Useful for generating automatic file names for plotting.
+
+    Args:
+        time_stamps: The time stamps.
+
+    Returns:
+        The file names.
+
+    """
     names = list()
 
     for stamp in time_stamps:
@@ -570,6 +703,20 @@ def _time_stamps_to_filenames(time_stamps: tuple[TIME_TYPE, ...]) -> tuple[str]:
 
 
 def _coordinates_to_formatted(latitude: float, longitude: float) -> str:
+    """
+    Formats a point's coordinates to a string with degree symbol.
+
+    Examples:
+        -9.6, 80 -> 9.6° S, 80° E
+        10.2, -5.1 -> 10.2° N, 5.1° W
+    Args:
+        latitude: The latitude.
+        longitude: The longitude.
+
+    Returns:
+        The formatted coordinate.
+
+    """
     result = str()
 
     if latitude >= 0:
@@ -585,17 +732,45 @@ def _coordinates_to_formatted(latitude: float, longitude: float) -> str:
     return result
 
 
-def load_pickle(file_name: str):
-    with open(file_name, 'rb') as temp_file:
+def load_pickle(file_path: str):
+    """
+    Load a pickle file.
+    Args:
+        file_path: The file path.
+
+    Returns:
+        The pickled object.
+
+    """
+    with open(file_path, 'rb') as temp_file:
         return pickle.load(temp_file)
 
 
-def save_pickle(obj: object, file_name: str) -> None:
-    with open(file_name, 'wb') as temp_file:
+def save_pickle(obj: object, file_path: str) -> None:
+    """
+    Pickle an object using the highest protocol.
+    Args:
+        obj: The object
+        file_path: The file path.
+
+    Returns:
+        None.
+
+    """
+    with open(file_path, 'wb') as temp_file:
         pickle.dump(obj, temp_file, pickle.HIGHEST_PROTOCOL)
 
 
 def _to_tuple(element: object) -> tuple:
+    """
+    Convert an object to a tuple, if it not already one.
+    Args:
+        element: The object.
+
+    Returns:
+        The object as a tuple, if it is not already one. Otherwise, the object.
+
+    """
     if not isinstance(element, tuple):
         return element,
     else:
@@ -603,6 +778,22 @@ def _to_tuple(element: object) -> tuple:
 
 
 def _output_figure(out_mode: str, save_title: Optional[str]) -> matFigure or None:
+    """
+    Output manager for the current matplotlib plot.
+
+    Actions that can be performed are:
+    out_mode = 'show' -> shows the plot. Returns None.
+    out_mode = 'save' -> saves the plot using the given title (support for .png, .ps and .eps). Returns None.
+    out_mode=  'fig'  -> returns the current figure.
+
+    Args:
+        out_mode: The output mode.
+        save_title: The save title. Possibly None.
+
+    Returns:
+        None or matplotlib Figure.
+
+    """
     if out_mode == 'show':
         plt.show()
     elif out_mode == 'save':
@@ -693,7 +884,7 @@ def _get_variable_identifier(dataset, identifier: int) -> Variable:
     Get the first variable object with the given identifier from a dataset.
 
     Accesses the global Info object. The variables within each dataset should have unique identifiers,
-    so this function should return * the * variable with the given nidentifier.
+    so this function should return * the * variable with the given identifier.
 
     Args:
         dataset: The dataset.
@@ -1207,7 +1398,8 @@ def _cut_interpret_data(dataset: Dataset, variable: Variable, coo_index: tuple[f
             end_time_index = _get_time_index(dataset, year, month, day, hours[-1])
 
             return [variable_data[start_time_index:end_time_index + 1, coo_index[0]:coo_index[1], coo_index[
-                                                                                                     2]:coo_index[3]], ]
+                                                                                                      2]:coo_index[
+                                                                                                      3]], ]
 
         else:
             variable_data = _load(dataset, year, month, variable)[variable.key]
@@ -1225,6 +1417,46 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
                     projection: ccrs.Projection, limits: Optional[LIMIT_TYPE], ticks: Optional[tuple[float, ...]],
                     skip: Optional[int], size: POINT_TYPE, titles: Optional[tuple[str, ...] | str], out_mode: str,
                     directory: Optional[str], save_titles: Optional[str | tuple[str, ...]], font_size: int) -> None:
+    """
+    Plot a series of Graphable objects.
+
+    Should each Graphable have the same time length, one plot is generated for each time stamp.
+
+    Supported styles:
+    For points: [colour]_[marker]_[marker size] with each from matplotlib. For example: black_X_12
+    For paths: [colour]_[alpha] with each from matplotlib. For example: red_0.5
+    For scalars: heat_[cmap] with cmap from matplotlib. For example: heat_jet
+                 contour_[integer number of levels] For example: contour_9
+    For vectors: quiver
+
+    The number of styles should equal the number of graphables.
+    Should no limits be given, the maximal limits from all graphables is used.
+    Should no tick markers be given, they are automatically found.
+    Should titles be given, there should be as the time length of the graphables. If they are not given,
+    automatic titles are generates using the time titles from the graphables.
+    Should no directory be given and figures saved, the current directory is used.
+    Should no save titles be given, they are automatically generated. Otherwise, there should be the same number as
+    the time length of the graphables.
+
+
+    Args:
+        graphables: A single Graphable or tuple of Graphables to plot.
+        styles: The styles.
+        projection: The projection.
+        limits: The limits of the plot. Possibly None.
+        ticks: Tick markers for use with heat map. Possibly None.
+        skip: The number of points to skip in each direction for quiver plots. Possibly None.
+        size: The size of the figure.
+        titles: The titles. Possibly None.
+        out_mode: The output mode. See _output_figure.
+        directory: The directory for plot figures. Possibly None.
+        save_titles: The save titles.
+        font_size: The font size.
+
+    Returns:
+        None. Note, each plot is processed through _output_figure.
+
+    """
     # Convert possible single objects to tuples
     graphables = _to_tuple(graphables)
     styles = _to_tuple(styles)
@@ -1323,6 +1555,7 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
                            transform=ccrs.PlateCarree())
 
         # Output figure
+        plt.tight_layout()
         save_title = directory + '/' + save_titles[time_index] if directory is not None else save_titles[time_index]
         _output_figure(out_mode, save_title)
 
@@ -1332,6 +1565,41 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
 def plot_point_data_over_time(data_collection: DataCollection, title: Optional[str], tick_mode: Optional[str], size:
                               POINT_TYPE, out_mode: str, save_title: Optional[str], y_line: Optional[float], font_size:
                               int = 12) -> matFigure | None:
+    """
+    Plots the data of a single point over time.
+    
+    The inputted DataCollection must be of a single point, have a single component (be a scalar), and be over a time 
+    series.
+    Should no title be given, one is automatically generated.
+    Should no tick mode be given, matplolib's AutoDateLocator and AutoDataFormatter is used. Otherwise, 
+    supported tick modes are:
+    
+    month_day -> Interval of 5 days with month and day marked
+    month -> Each month
+    auto -> Equivalent to passing no tick mode
+    
+    Should no save title be given, one is automatically generated.
+    The optional y_line is a grey horizontal dashed line drawn at the given value.
+    
+    Args:
+        data_collection: The data collection.
+        title: The figure title. Possibly None.
+        tick_mode: The tick mode. Possibly None.
+        size: The figure size.
+        out_mode: The output mode. See _output_figure.
+        save_title: The save title. Possibly None.
+        y_line: The y value for the horizontal line. Possibly None.
+        font_size: The font size.
+
+    Returns:
+        None. Note, the figure is processed through _output_figure.
+        
+    Raises:
+        ValueError: The data collection is not of a single point
+        ValueError: The data collection must have a single component (be of a scalar)
+        ValueError: The data collection is not over a time series
+
+    """
     # Check that the data collection is for a single point
     if not data_collection.spread == (1, 1):
         raise ValueError(f'The data collection is not of a single point')
@@ -1386,17 +1654,9 @@ def plot_point_data_over_time(data_collection: DataCollection, title: Optional[s
 
     ax.set(title=title, ylabel=data_collection.variable.name)
 
-    if out_mode == 'show':
-        plt.show()
-    elif out_mode == 'save':
-        if save_title.endswith('.png') or save_title.endswith('.jpg'):
-            plt.savefig(save_title, dpi=300, backend='AGG')
-        elif save_title.endswith('.eps') or save_title.endswith('.ps'):
-            plt.savefig(save_title, format='eps', backend='PS')
-        else:
-            plt.savefig(save_title)
-    elif out_mode == 'fig':
-        return fig
+    _output_figure(out_mode, save_title)
+
+    return None
 
 
 def _maximal_limits(limits: tuple[LIMIT_TYPE, ...]) -> LIMIT_TYPE:
@@ -1510,7 +1770,8 @@ def percentile_data_collection(data_collection: DataCollection, percentile: floa
     title_prefix = f'{data_collection.dataset}: {percentile}-th percentile of {data_collection.variable} '
 
     return DataCollection(data_collection.dataset, data_collection.variable, data_collection.time,
-                          data_collection.get_limits(), percentile_data, data_collection.latitude, data_collection.longitude,
+                          data_collection.get_limits(), percentile_data, data_collection.latitude,
+                          data_collection.longitude,
                           title_prefix, '', (data_collection.time,))
 
 
@@ -1580,9 +1841,22 @@ def percentile_date_data_collection(spec_data_collection: DataCollection, ref_da
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
-def max_data_collection(data_collection: DataCollection, per_time_slice: bool) -> tuple[PointCollection, ArrayLike] |\
+def max_data_collection(data_collection: DataCollection, per_time_slice: bool) -> tuple[PointCollection, ArrayLike] | \
                                                                                   tuple[PointCollection, TIME_TYPE,
                                                                                         ArrayLike]:
+    """
+    Find the maximum data value of a data collection.
+
+    The given data collection must have a single component.
+
+    Args:
+        data_collection: The data collection.
+        per_time_slice: Whether to compute the maximum at each time (True) or over all time (False).
+
+    Returns:
+        The maximum.
+
+    """
     if not data_collection.dimension == 1:
         raise ValueError('Max point only valid for single component (scalar) data')
     if per_time_slice:
@@ -1688,8 +1962,27 @@ def contour_size_data_collection(data_collection: DataCollection, contour: float
 
 def find_contour_path_data_collection(data_collection: DataCollection, contour: float, path_index: int) -> \
         PathCollection:
+    """
+    Finds a specific contour path of a data collection.
+
+    The data collection must have a single component and be of a single time.
+
+    Args:
+        data_collection: The data collection.
+        contour: The contour value.
+        path_index: The contour path index.
+
+    Returns:
+        The path.
+
+    Raises:
+        ValueError: The data collection must have a single component (be a scalar).
+        ValueError: The data collection must have a time length of 1.
+        IndexError: Contour path index too large.
+
+    """
     if data_collection.dimension != 1:
-        raise ValueError('The data collection must be of a scalar.')
+        raise ValueError('The data collection must have a single component (be a scalar).')
     if data_collection.get_time_length() != 1:
         raise ValueError('The data collection must have a time length of 1.')
 
@@ -1703,7 +1996,7 @@ def find_contour_path_data_collection(data_collection: DataCollection, contour: 
     contour_object = cs.collections[0]
 
     if path_index >= len(contour_object.get_paths()):
-        raise IndexError('Contour path index too large')
+        raise IndexError('Contour path index too large.')
     path_data = contour_object.get_paths()[path_index]
 
     title = f'{path_index + 1}-th path of the {contour}-th contour of {data_collection} '
@@ -1742,8 +2035,24 @@ def _compute_area_grid(latitude, longitude):
     return area_grid
 
 
-def refine_area_to_illustration(path_collection: PathCollection, point_condition: Callable[[int, int], bool]) -> \
+def refine_area_to_illustration(path_collection: PathCollection, point_condition: Callable[[float, float], bool]) -> \
         DataCollection:
+    """
+    Illustrates a refined path.
+
+    The point_condition takes in a point (latitude, lonngitude pair) and returns a boolean representing whetherr that
+    point should be shown.
+
+    The returned DataCollection has 1's where the point meets the point condition and 0's otherwise.
+
+    Args:
+        path_collection: The path to illustrate.
+        point_condition: The point condition.
+
+    Returns:
+        A DataCollection with the illustration data as binary data values.
+
+    """
     coo_index, latitude, longitude = _get_coordinate_information(path_collection.dataset, path_collection.get_limits())
     show_points = np.zeros((path_collection.get_time_length(), len(latitude), len(longitude)))
 
@@ -1753,13 +2062,34 @@ def refine_area_to_illustration(path_collection: PathCollection, point_condition
                 if path_collection.contains_point(time_idx, (lat, lon)) and point_condition(lat, lon):
                     show_points[time_idx, lat_idx, lon_idx] = 1
 
-    return DataCollection(path_collection.dataset, path_collection.variable, path_collection.time, path_collection.get_limits(),
+    return DataCollection(path_collection.dataset, path_collection.variable, path_collection.time,
+                          path_collection.get_limits(),
                           [show_points, ], latitude, longitude, path_collection.title_prefix,
                           path_collection.title_suffix + ' (refined)', path_collection.time_stamps)
 
 
-# ======================== ATMOSPHERIC PHYSICS CONVENTIONS =============================================================
+# ======================== ATMOSPHERIC PHYSICS & RESEARCH CONVENTIONS ==================================================
 def get_winter_year(time: TIME_TYPE) -> int:
+    """
+    Get the winter year of a winter time. Uses the convention that November and December refer to the next year.
+
+    Only months 1, 2, 3, 4, 11, and 12 are winter months.
+
+    Examples:
+        (2022, 11, 12, 1) -> 2022
+        (2013, 4, None, None) -> 2013
+
+    Args:
+        time: The winter time.
+
+    Returns:
+        The winter year.
+
+    Raises:
+        ValueError: The year and months must not be None.
+        ValueError: The given month is not recognized as a winter month.
+
+    """
     year, month, day, hour = time
     if month is None or year is None:
         raise ValueError('The year and months must not be None.')
@@ -1768,17 +2098,31 @@ def get_winter_year(time: TIME_TYPE) -> int:
     elif month in (1, 2, 3, 4):
         return year
     else:
-        raise ValueError('The given month is not recognized as a winter month')
+        raise ValueError('The given month is not recognized as a winter month.')
+
+
+def get_defaults() -> tuple[LIMIT_TYPE, ccrs.Projection]:
+    """
+    Default values for limits and projection.
+
+    The default limits are (40, 68, -60, -10) and the default projection is Lambert, centred on those limits.
+    Returns:
+        Tuple containing default limits and projection.
+
+    Raises:
+        NameError: The default projection, Lambert, is not available according to info.json.
+
+    """
+    limits = (40, 68, -60, -10)
+    if 'Lambert' in info.projections:
+        return limits, get_projection_name('Lambert', limits)
+    else:
+        raise NameError('The default projection, Lambert, is not available according to info.json.')
 
 
 # ======================== MAIN ========================================================================================
-def example_function(lat, lon) -> bool:
-    return True
-
-
 def main():
-    limits, projection = get_defaults()
-    print(get_winter_year((1980, 1, None, None)))
+    print('Welcome to edcl!')
 
 
 if __name__ == '__main__':
