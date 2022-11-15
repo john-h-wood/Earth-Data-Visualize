@@ -514,6 +514,12 @@ class DataCollection(Graphable):
         """
         return len(self.data)
 
+    def time_order(self) -> None:
+        for component in self.data:
+            # noinspection PyUnresolvedReferences
+            component.sort(axis=0)
+        self.title_prefix = 'Ordered ' + self.title_prefix
+
 
 # ======================== CONSTANTS AND GLOBALS  ======================================================================
 def init_load_info() -> Info:
@@ -1835,6 +1841,51 @@ def percentile_date_data_collection(spec_data_collection: DataCollection, ref_da
     return DataCollection(spec_data_collection.dataset,
                           spec_data_collection.variable, spec_data_collection.time, spec_data_collection.limits,
                           percentile_data, spec_data_collection.latitude, spec_data_collection.longitude,
+                          title_prefix, title_suffix, spec_data_collection.time_stamps)
+
+
+def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collection: DataCollection) -> DataCollection:
+    """
+    TODO: Documentation
+    """
+
+    if not np.array_equal(spec_data_collection.latitude, ref_data_collection.latitude) or not np.array_equal(
+            spec_data_collection.longitude, ref_data_collection.longitude):
+        raise ValueError('The specific and reference data collections must have the same latitude and longitude '
+                         'values.')
+    if spec_data_collection.dimension != ref_data_collection.dimension:
+        raise ValueError('The specific and reference data collections must have the same vector dimensions.')
+
+    results = np.empty((spec_data_collection.get_time_length(), *spec_data_collection.spread))
+
+    # For each component at each time step of the specific data
+    for component, (spec_component, ref_component) in enumerate(zip(spec_data_collection.data,
+                                                                   ref_data_collection.data)):
+        for time_idx, (spec_component_time, time_stamp) in enumerate(zip(spec_component,
+                                                                       spec_data_collection.time_stamps)):
+            print(f'Fraction below for component {component} at {time_stamp}')
+
+            # For each point
+            for lat_idx in range(len(spec_data_collection.latitude)):
+                for lon_idx in range(len(spec_data_collection.longitude)):
+
+                    # Find the fraction of points from reference data below value
+                    score = spec_component_time[lat_idx, lon_idx]
+                    total = 0
+                    for value in ref_component[:, lat_idx, lon_idx]:
+                        if value < score:
+                            total += 1
+                        else: # assuming reference data is ordered
+                            break
+                    # Set value in results array
+                    results[time_idx, lat_idx, lon_idx] = total / ref_data_collection.get_time_length()
+
+    title_prefix = f'Fraction of {ref_data_collection} below {spec_data_collection.variable} '
+    title_suffix = f' ({spec_data_collection.dataset})'
+
+    return DataCollection(spec_data_collection.dataset,
+                          spec_data_collection.variable, spec_data_collection.time, spec_data_collection.limits,
+                          [results], spec_data_collection.latitude, spec_data_collection.longitude,
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
