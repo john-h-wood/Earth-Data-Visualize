@@ -785,7 +785,7 @@ def _to_tuple(element: object) -> tuple:
 
 def _count_non_nan(array: ArrayLike) -> int:
     """
-    The quantity of non-nan elements in ann array.
+    The quantity of non-nan elements in an array.
 
     Args:
         array: The array.
