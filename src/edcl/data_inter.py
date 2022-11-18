@@ -33,28 +33,31 @@ Credits
     Calculating contour areas adapted from https://stackoverflow.com/questions/48634934/contour-area-calculation-using-
     matplotlib-path by Thomas Kühn. Accessed July 23, 2022
 
+    Counting number of non-nan elements in array from https://stackoverflow.com/questions/21778118/counting-the-number-
+    of-non-nan-elements-in-a-numpy-ndarray-in-python by M4rtini. Accessed November 18, 2022.
+
 """
 
-import datetime
 import json
 import pickle
-from glob import glob
+import datetime
+import numpy as np
+import scipy.io as sio
+import cartopy.crs as ccrs
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.patches as patches
+
 from math import inf
+from glob import glob
+from matplotlib.path import Path
+from numpy.typing import ArrayLike
 from abc import ABC, abstractmethod
 from os.path import basename, isfile
 from importlib.resources import files
-from typing import Union, Optional, Callable
-
-import cartopy.crs as ccrs
-import matplotlib.dates as mdates
-import matplotlib.patches as patches
-import matplotlib.pyplot as plt
-import numpy as np
-import scipy.io as sio
-from matplotlib.figure import Figure as matFigure
-from matplotlib.path import Path
-from numpy.typing import ArrayLike
 from scipy.stats import percentileofscore
+from typing import Union, Optional, Callable
+from matplotlib.figure import Figure as matFigure
 
 POINT_TYPE = tuple[float, float]
 POINT_INDEX_TYPE = tuple[int, int]
@@ -778,6 +781,20 @@ def _to_tuple(element: object) -> tuple:
         return element,
     else:
         return element
+
+
+def _count_non_nan(array: ArrayLike) -> int:
+    """
+    The quantity of non-nan elements in ann array.
+
+    Args:
+        array: The array.
+
+    Returns:
+        The quantity.
+
+    """
+    return np.count_nonzero(~np.isnan(array))
 
 
 def _output_figure(out_mode: str, save_title: Optional[str]) -> matFigure or None:
@@ -1856,7 +1873,9 @@ def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collec
     if spec_data_collection.dimension != ref_data_collection.dimension:
         raise ValueError('The specific and reference data collections must have the same vector dimensions.')
 
-    results = np.empty((spec_data_collection.get_time_length(), *spec_data_collection.spread))
+    len_lat, len_lon = spec_data_collection.spread
+    results = np.empty((spec_data_collection.get_vector_dimension(), spec_data_collection.get_time_length(),
+                        len_lat, len_lon))
 
     # For each component at each time step of the specific data
     for component, (spec_component, ref_component) in enumerate(zip(spec_data_collection.data,
@@ -1866,26 +1885,21 @@ def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collec
             print(f'Fraction below for component {component} at {time_stamp}')
 
             # For each point
-            for lat_idx in range(len(spec_data_collection.latitude)):
-                for lon_idx in range(len(spec_data_collection.longitude)):
+            for lat_idx in range(len_lat):
+                for lon_idx in range(len_lon):
 
                     # Find the fraction of points from reference data below value
                     score = spec_component_time[lat_idx, lon_idx]
-                    total = 0
-                    for value in ref_component[:, lat_idx, lon_idx]:
-                        if value < score:
-                            total += 1
-                        else: # assuming reference data is ordered
-                            break
-                    # Set value in results array
-                    results[time_idx, lat_idx, lon_idx] = total / ref_data_collection.get_time_length()
+                    total = np.searchsorted(ref_component[:, lat_idx, lon_idx], score)
+                    results[component, time_idx, lat_idx, lon_idx] = total / _count_non_nan(ref_component[:, lat_idx,
+                                                                                            lon_idx])
 
     title_prefix = f'Fraction of {ref_data_collection} below {spec_data_collection.variable} '
     title_suffix = f' ({spec_data_collection.dataset})'
 
     return DataCollection(spec_data_collection.dataset,
                           spec_data_collection.variable, spec_data_collection.time, spec_data_collection.limits,
-                          [results], spec_data_collection.latitude, spec_data_collection.longitude,
+                          [r for r in results], spec_data_collection.latitude, spec_data_collection.longitude,
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
