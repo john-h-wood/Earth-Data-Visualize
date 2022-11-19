@@ -24,7 +24,7 @@
             "file_suffix": "natl",
             "variables": [
                 {
-                    "name": "Wind speed (m/s)",
+                    "name": "Wind spd (m/s)",
                     "kind": "scalar",
                     "is_combo": false,
                     "identifier": 0,
@@ -60,7 +60,7 @@
             "file_suffix": "natl",
             "variables": [
                 {
-                    "name": "Wind speed (m/s)",
+                    "name": "Wind spd (m/s)",
                     "kind": "scalar",
                     "is_combo": false,
                     "identifier": 0,
@@ -96,7 +96,7 @@
             "file_suffix": "natl",
             "variables": [
                 {
-                    "name": "Wind speed (m/s)",
+                    "name": "Wind spd (m/s)",
                     "kind": "scalar",
                     "is_combo": false,
                     "identifier": 0,

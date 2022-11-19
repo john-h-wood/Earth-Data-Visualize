@@ -41,6 +41,7 @@ Credits
 import json
 import pickle
 import datetime
+import warnings
 import numpy as np
 import scipy.io as sio
 import cartopy.crs as ccrs
@@ -781,20 +782,6 @@ def _to_tuple(element: object) -> tuple:
         return element,
     else:
         return element
-
-
-def _count_non_nan(array: ArrayLike) -> int:
-    """
-    The quantity of non-nan elements in an array.
-
-    Args:
-        array: The array.
-
-    Returns:
-        The quantity.
-
-    """
-    return np.count_nonzero(~np.isnan(array))
 
 
 def _output_figure(out_mode: str, save_title: Optional[str]) -> matFigure or None:
@@ -1705,7 +1692,7 @@ def _maximal_limits(limits: tuple[LIMIT_TYPE, ...]) -> LIMIT_TYPE:
 
 
 # ======================== STATISTICS ==================================================================================
-def average_data_collection(data_collection: DataCollection) -> DataCollection:
+def average(data_collection: DataCollection) -> DataCollection:
     """
     Averages a data collection's data over the time axis.
 
@@ -1731,8 +1718,7 @@ def average_data_collection(data_collection: DataCollection) -> DataCollection:
                           title_prefix, '', (data_collection.time,))
 
 
-def bound_frequency_data_collection(data_collection: DataCollection, lower_bound: float,
-                                    upper_bound: float) -> DataCollection:
+def bound_frequency(data_collection: DataCollection, lower_bound: float, upper_bound: float) -> DataCollection:
     """
     Finds the relative frequency of a data collection's data being greater than or equal to a lower bound and less
     than or equal to an upper bound. This is done point-wise over the time axis. That is, for each coordinate point
@@ -1766,14 +1752,14 @@ def bound_frequency_data_collection(data_collection: DataCollection, lower_bound
                           title_prefix, '', (data_collection.time,))
 
 
-def percentile_data_collection(data_collection: DataCollection, percentile: float) -> DataCollection:
+def percentile(data_collection: DataCollection, perc: float) -> DataCollection:
     """
     Finds the given percentile of a data collection's data. This is done point-wise over the time axis. That is, for
     each coordinate point over time.
 
     Args:
         data_collection: The data collection.
-        percentile: The percentile.
+        perc: The percentile.
 
     Returns:
         A new data_collection with resulting data. The dataset, variable, time, limits, latitude and longitude are all
@@ -1784,10 +1770,10 @@ def percentile_data_collection(data_collection: DataCollection, percentile: floa
     """
     percentile_data = list()
     for i in range(data_collection.get_vector_dimension()):
-        flat_percentile = np.percentile(data_collection.get_component(None, i), percentile, axis=0)
+        flat_percentile = np.percentile(data_collection.get_component(None, i), perc, axis=0)
         percentile_data.append(np.expand_dims(flat_percentile, axis=0))
 
-    title_prefix = f'{data_collection.dataset}: {percentile}-th percentile of {data_collection.variable} '
+    title_prefix = f'{data_collection.dataset}: {perc}-th percentile of {data_collection.variable} '
 
     return DataCollection(data_collection.dataset, data_collection.variable, data_collection.time,
                           data_collection.get_limits(), percentile_data, data_collection.latitude,
@@ -1795,7 +1781,7 @@ def percentile_data_collection(data_collection: DataCollection, percentile: floa
                           title_prefix, '', (data_collection.time,))
 
 
-def percentile_date_data_collection(spec_data_collection: DataCollection, ref_data_collection: DataCollection) -> \
+def percentile_date(spec_data_collection: DataCollection, ref_data_collection: DataCollection) -> \
         DataCollection:
     """
     Returns the percentile of a (specific) data collection's data relative to another (reference) data_collection's
@@ -1861,11 +1847,22 @@ def percentile_date_data_collection(spec_data_collection: DataCollection, ref_da
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
-def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collection: DataCollection) -> DataCollection:
+def count_non_nan(dc: DataCollection) -> DataCollection:
+    non_nan_time_count = [np.expand_dims(np.count_nonzero(~np.isnan(c), axis=0), axis=0) for c in dc.data]
+
+    title_prefix = 'Non-nan count of ' + dc.title_prefix
+
+    return DataCollection(dc.dataset, dc.variable, dc.time, dc.limits, non_nan_time_count, dc.latitude, dc.longitude,
+                          title_prefix, dc.title_suffix, (dc.time,))
+
+
+def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collection: DataCollection, non_nan_count:
+                           DataCollection) -> DataCollection:
     """
     TODO: Documentation
     """
-
+    if not ref_data_collection.title_prefix.startswith('Ordered '):
+        warnings.warn('Reference data may not be ordered')
     if not np.array_equal(spec_data_collection.latitude, ref_data_collection.latitude) or not np.array_equal(
             spec_data_collection.longitude, ref_data_collection.longitude):
         raise ValueError('The specific and reference data collections must have the same latitude and longitude '
@@ -1879,9 +1876,9 @@ def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collec
 
     # For each component at each time step of the specific data
     for component, (spec_component, ref_component) in enumerate(zip(spec_data_collection.data,
-                                                                   ref_data_collection.data)):
+                                                                    ref_data_collection.data)):
         for time_idx, (spec_component_time, time_stamp) in enumerate(zip(spec_component,
-                                                                       spec_data_collection.time_stamps)):
+                                                                         spec_data_collection.time_stamps)):
             print(f'Fraction below for component {component} at {time_stamp}')
 
             # For each point
@@ -1891,8 +1888,10 @@ def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collec
                     # Find the fraction of points from reference data below value
                     score = spec_component_time[lat_idx, lon_idx]
                     total = np.searchsorted(ref_component[:, lat_idx, lon_idx], score)
-                    results[component, time_idx, lat_idx, lon_idx] = total / _count_non_nan(ref_component[:, lat_idx,
-                                                                                            lon_idx])
+                    # noinspection PyTypeChecker
+                    results[component, time_idx, lat_idx, lon_idx] = total / non_nan_count.data[component][time_idx,
+                                                                                                           lat_idx,
+                                                                                                           lon_idx]
 
     title_prefix = f'Fraction of {ref_data_collection} below {spec_data_collection.variable} '
     title_suffix = f' ({spec_data_collection.dataset})'
@@ -1903,7 +1902,7 @@ def fraction_below_ordered(spec_data_collection: DataCollection, ref_data_collec
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
-def max_data_collection(data_collection: DataCollection, per_time_slice: bool) -> tuple[PointCollection, ArrayLike] | \
+def max_dc(data_collection: DataCollection, per_time_slice: bool) -> tuple[PointCollection, ArrayLike] | \
                                                                                   tuple[PointCollection, TIME_TYPE,
                                                                                         ArrayLike]:
     """
