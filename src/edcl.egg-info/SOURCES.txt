@@ -1,0 +1,12 @@
+MANIFEST.in
+README.md
+pyproject.toml
+setup.cfg
+src/edcl/__init__.py
+src/edcl/data_inter.py
+src/edcl/info.json
+src/edcl.egg-info/PKG-INFO
+src/edcl.egg-info/SOURCES.txt
+src/edcl.egg-info/dependency_links.txt
+src/edcl.egg-info/top_level.txt
+src/edcl.egg-info/zip-safe
