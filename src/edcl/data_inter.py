@@ -1109,6 +1109,21 @@ def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME_TYPE) -> tu
 
     return tuple(time_stamps)
 
+def is_available_names(dataset_name: str, variable_name: str, time: TIME_TYPE) -> bool:
+    dataset = get_dataset_name(dataset_name)
+    variable = get_variable_name(dataset, variable_name)
+
+    year, month, day, hour = time
+    if year not in get_years(dataset, variable):
+        return False
+    if month not in get_months(dataset, year, variable):
+        return False
+    if day not in get_days(dataset, year, month):
+        return False
+    if hour not in get_hours(dataset, year, month, day):
+        return False
+    return True
+
 
 # ======================== DATA LOADING ================================================================================
 def _get_path(dataset: Dataset, year: Optional[int], month: Optional[int], variable: Optional[Variable]) -> str:
@@ -1891,7 +1906,7 @@ DataCollection) -> DataCollection:
                     score = spec_component_time[lat_idx, lon_idx]
                     total = np.searchsorted(ref_component[:, lat_idx, lon_idx], score)
                     # noinspection PyTypeChecker
-                    results[component, time_idx, lat_idx, lon_idx] = total / non_nan_count.data[component][time_idx,
+                    results[component, time_idx, lat_idx, lon_idx] = total / non_nan_count.data[component][0,
                     lat_idx,
                     lon_idx]
 
