@@ -301,15 +301,6 @@
                     "key": null,
                     "equation": "direction_0_1",
                     "file_identifier": null
-                },
-                {
-                    "name": "Frac below",
-                    "kind": "scalar",
-                    "is_combo": false,
-                    "identifier": 7,
-                    "key": "fb_ts",
-                    "equation": null,
-                    "file_identifier": "fb"
                 }
             ]
         }
