@@ -90,9 +90,9 @@
         },
         {
             "directory": "ascat_winds",
-            "name": "ASCATa",
+            "name": "ASCATc",
             "is_unified": true,
-            "file_prefix": "ascata",
+            "file_prefix": "ascatc",
             "file_suffix": "natl",
             "variables": [
                 {
