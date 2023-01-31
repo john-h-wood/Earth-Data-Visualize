@@ -36,8 +36,7 @@ wind_spd = di.get_variable_name(era5, 'Wind spd (m/s)')
 # print('Loaded non-nan count')
 
 # ============ TEST DATA LOAD ==========================================================================================
-ordered_winter_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', (-90, 90, -180, 180), (2022, 4, None,
-                                                                                                    None))
+ordered_winter_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (2022, 4, None, None))
 ordered_winter_data.time_order()
 non_nan_count = di.count_non_nan(ordered_winter_data)
 print(np.shape(ordered_winter_data.data))
@@ -52,7 +51,7 @@ start_time = time()
 for year in years_to_do:
     for month in [4, ]: # change back to di.get_months(era5, year, wind_spd)
 
-        spec_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', limits, (year, month, None, None))
+        spec_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (year, month, None, None))
         results = di.fraction_below_ordered(spec_data, ordered_winter_data, non_nan_count)
         print(np.shape(results.data))
 
@@ -67,7 +66,7 @@ for year in years_to_do:
 
         # Save
         month_str = '0' + str(month) if month < 10 else str(month)
-        savemat(f'/Volumes/My Drive/SURF/data copy/era5/{year}/era5_fb_m{month_str}_y{year}_natl.mat', results_dict)
+        savemat(f'/Volumes/My Drive/Moore/data copy/era5/{year}/era5_fb_m{month_str}_y{year}_natl.mat', results_dict)
 
         print(f'Year {year} month {month} saved')
 
