@@ -36,11 +36,11 @@ wind_spd = di.get_variable_name(era5, 'Wind spd (m/s)')
 # print('Loaded non-nan count')
 
 # ============ TEST DATA LOAD ==========================================================================================
-ordered_winter_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (2022, 4, None, None))
-ordered_winter_data.time_order()
-non_nan_count = di.count_non_nan(ordered_winter_data)
-print(np.shape(ordered_winter_data.data))
-print('Loaded test data')
+# ordered_winter_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (2022, 4, None, None))
+# ordered_winter_data.time_order()
+# non_nan_count = di.count_non_nan(ordered_winter_data)
+# print(np.shape(ordered_winter_data.data))
+# print('Loaded test data')
 
 # ============ SET YEARS ===============================================================================================
 years_to_do = (2022,)
