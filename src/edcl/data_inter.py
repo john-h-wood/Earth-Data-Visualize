@@ -393,7 +393,7 @@ class DataCollection(Graphable):
         self.time = time
 
         if limits is None:
-            raise ValueError('Automatic limits not yet supported')
+            self.limits = (latitude[0], latitude[-1], longitude[0], longitude[-1])
         else:
             self.limits = limits
 
@@ -868,7 +868,7 @@ def get_variable_name(dataset, name: str) -> Variable:
     raise ValueError('No such variable was found.')
 
 
-def get_data_collection_names(dataset_name: str, variable_name: str, limits: LIMIT_TYPE, time: TIME_TYPE) -> \
+def get_data_collection_names(dataset_name: str, variable_name: str, limits: Optional[LIMIT_TYPE], time: TIME_TYPE) -> \
         DataCollection:
     """
     Get a data collection with the given information. Useful for scripts and GUIs to avoid having to get variable and
@@ -1237,32 +1237,37 @@ def _get_time_index(dataset: Dataset, year: int, month: int, day: int, hour: int
     return hour_inds[0] + hours_sub.index(hour)
 
 
-def _get_coordinate_information(dataset: Dataset, limits: LIMIT_TYPE) -> tuple[LIMIT_TYPE, ArrayLike, ArrayLike]:
+def _get_coordinate_information(dataset: Dataset, limits: Optional[LIMIT_TYPE]) -> tuple[LIMIT_TYPE, ArrayLike,
+ArrayLike]:
     # TODO efficiency could probably be improved, with the assumption that coordinates only increase
     """
-    Get the coordinate indices corresponding to given coordinate limits.
+    Get the coordinate indices corresponding to given coordinate limits, and coordinates cut to those limits.
 
     Data is stored in matrices which have their first dimension as time. The second and third dimensions refer,
     respectively, to latitude and longitude. This function returns the index limits for latitude and longitude,
     given coordinate limits. That is, the upper and lower indices for which both latitude and longitude are within or
-    equal to specified bounds.
+    equal to specified bounds. One is added to the upper indices so that a call such as lat[lat_ind_min:lat_ind_max]
+    yields the expected latitudes.
 
     Limits are formatted as (lat_min, lat_max, lon_min, lon_max). Return is a tuple with similar ordering,
     but with indices.
+
+    If the limits are None, the returned indices correspond to all corrinate elements and the returned lat/lon
+    vectors constitute all available coordinates.
 
     Examples:
         Limits: (-2, 0, 0, 1)
         Latitude: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
         Longitude: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
 
-        Return: (3, 5, 5, 6)
+        Return: (3, 6, 5, 7)
 
     Args:
         dataset: The dataset.
-        limits: The limits.
+        limits: The limits. Possibly None.
 
     Returns:
-        The indices.
+        The indices, and latitude and longitude cut to the limits.
 
     """
     _function_call()
@@ -1272,6 +1277,9 @@ def _get_coordinate_information(dataset: Dataset, limits: LIMIT_TYPE) -> tuple[L
     latitude = data['lat']
     longitude = data['lon']
 
+    if limits is None:
+        return (0, len(latitude), 0, len(longitude)), latitude, longitude
+
     lat_idx = np.asarray((latitude >= limits[0]) & (latitude <= limits[1])).nonzero()[0]
     lon_idx = np.asarray((longitude >= limits[2]) & (longitude <= limits[3])).nonzero()[0]
 
@@ -1279,8 +1287,8 @@ def _get_coordinate_information(dataset: Dataset, limits: LIMIT_TYPE) -> tuple[L
         raise IndexError('No data found for the given limits')
 
     coo_index = lat_idx[0], lat_idx[-1] + 1, lon_idx[0], lon_idx[-1] + 1
-    latitude = data['lat'][coo_index[0]:coo_index[1]]
-    longitude = data['lon'][coo_index[2]:coo_index[3]]
+    latitude = latitude[coo_index[0]:coo_index[1]]
+    longitude = longitude[coo_index[2]:coo_index[3]]
 
     return coo_index, latitude, longitude
 
@@ -1319,7 +1327,7 @@ ArrayLike]:
         return [np.rad2deg(np.arctan2(y, x)) - 90, ]  # TODO use oceanographic convention. This equation is wrong.
 
 
-def _get_data(dataset: Dataset, variable: Variable, limits: LIMIT_TYPE, time: TIME_TYPE) -> DataCollection:
+def _get_data(dataset: Dataset, variable: Variable, limits: Optional[LIMIT_TYPE], time: TIME_TYPE) -> DataCollection:
     """
     Gathers data for a variable, dataset, time, and coordinate limits. Includes
     coordinates. Performs any calculations coming from combo variables.
