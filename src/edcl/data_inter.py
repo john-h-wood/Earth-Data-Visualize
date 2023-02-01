@@ -1949,7 +1949,7 @@ def fraction_scalar_below_all_sorted_memory(spec_data_collection: DataCollection
     dataset = spec_data_collection.dataset
     sorted_variable = _get_variable_identifier(dataset, -1 * spec_data_collection.variable.identifier)
 
-    # Update results after loading in one month of reference data
+    # Update results after loading in one year of reference data
     for year in get_years(dataset, sorted_variable):
         for month in get_months(dataset, year, sorted_variable):
             sorted_month = _get_data(dataset, sorted_variable, spec_data_collection.limits, (year, month, None, None))
@@ -1958,9 +1958,8 @@ def fraction_scalar_below_all_sorted_memory(spec_data_collection: DataCollection
             # For each coordinate
             for lat_idx in range(len_lat):
                 for lon_idx in range(len_lon):
-
-                    coordinate_data = spec_data_collection.get_coordinate_index(None, 0, lat_idx, lon_idx)
                     sorted_coordinate_data = sorted_month.get_coordinate_index(None, 0, lat_idx, lon_idx)
+                    coordinate_data = spec_data_collection.get_coordinate_index(None, 0, lat_idx, lon_idx)
                     tally_below[:, lat_idx, lon_idx] += np.searchsorted(sorted_coordinate_data, coordinate_data)
 
     # Divide tally by non-nan-count for results array

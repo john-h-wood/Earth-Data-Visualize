@@ -13,16 +13,16 @@ wind_spd = di.get_variable_name(era5, 'Wind spd (m/s)')
 sorted_wind_spd = di.get_variable_name(era5, 'Sorted wind spd (m/s)')
 
 # ============ COUNT NON NAN ===========================================================================================
-# example_sorted_data = di.get_data_collection_names('ERA5', 'Sorted wind spd (m/s)', None, (2004, 1, None, None))
-# ref_non_nan_count = np.zeros(example_sorted_data.spread)
-#
-# for year in di.get_years(era5, sorted_wind_spd):
-#     for month in di.get_months(era5, year, sorted_wind_spd):
-#         sorted_month = di.get_data_collection_names('ERA5', 'Sorted wind spd (m/s)', None, (year, month, None, None))
-#         ref_non_nan_count += di.count_non_nan(sorted_month).get_component(0, 0)
-#         print(f'Added non-nan from {year=}, {month=}')
-#
-# di.save_pickle(ref_non_nan_count, '/Volumes/My Drive/Moore/pickles/frac_below/attempt_three/count_non_nan.pickle')
+example_sorted_data = di.get_data_collection_names('ERA5', 'Sorted wind spd (m/s)', None, (2004, 1, None, None))
+ref_non_nan_count = np.zeros(example_sorted_data.spread)
+
+for year in di.get_years(era5, sorted_wind_spd):
+    for month in di.get_months(era5, year, sorted_wind_spd):
+        sorted_month = di.get_data_collection_names('ERA5', 'Sorted wind spd (m/s)', None, (year, month, None, None))
+        ref_non_nan_count += di.count_non_nan(sorted_month).get_component(0, 0)
+        print(f'Added non-nan from {year=}, {month=}')
+
+di.save_pickle(ref_non_nan_count, '/Volumes/My Drive/Moore/pickles/frac_below/attempt_three/count_non_nan.pickle')
 
 # ============ LOAD NON NAN ============================================================================================
 ref_non_nan_count = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/attempt_three/count_non_nan.pickle')
@@ -50,7 +50,7 @@ ref_non_nan_count = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/a
 # di.plot_graphables(result, 'heat_jet', projection, None, (0.9, 1), None, (12, 8), None, 'save', None, 'ex.png', 12)
 
 # ============ YEAR RUNNER =============================================================================================
-years_to_do = (1979, 1980, 1981)
+years_to_do = (2022,)
 
 year_times = list()
 for year in years_to_do:
