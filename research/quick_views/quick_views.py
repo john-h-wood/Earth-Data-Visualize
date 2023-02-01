@@ -50,7 +50,7 @@ longitude = u_dict['lon']
 # Get u and v speed at time (guessed and checked to index 74 SEVENTY FOUR)
 guess = 74
 u_spd = u_dict['u10m_ts'][guess, :, :]
-v_spd = u_dict['u10m_ts'][guess, :, :]
+v_spd = v_dict['v10m_ts'][guess, :, :]
 wind_spd = np.sqrt(np.square(u_spd) + np.square(v_spd))
 
 # find index
