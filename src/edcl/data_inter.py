@@ -1953,7 +1953,7 @@ def fraction_scalar_below_all_sorted_memory(spec_data_collection: DataCollection
     for year in get_years(dataset, sorted_variable):
         for month in get_months(dataset, year, sorted_variable):
             sorted_month = _get_data(dataset, sorted_variable, spec_data_collection.limits, (year, month, None, None))
-            print(f'Tallying ref data from {year=}, {month=}')
+            print(f'Tallying ref data from {year=}, {month=} for spec dc timed {spec_data_collection.time}')
 
             # For each coordinate
             for lat_idx in range(len_lat):
