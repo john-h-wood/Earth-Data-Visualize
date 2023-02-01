@@ -1,11 +1,14 @@
-import edcl as di
+import numpy as np
+from scipy.io import loadmat
 
 
-data_new = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (2022, 4, 19, 12))
-projection = di.get_projection_name('Lambert', data_new.get_limits())
+data_dict = loadmat('/Volumes/My Drive/Moore/data copy/era5/2004/era5_ws10m_m12_y2004_natl.mat', squeeze_me=True)
+wind_data = data_dict['ws_ts']
+lat = data_dict['lat']
+lon = data_dict['lon']
+hours = data_dict['hour_ts']
 
-di.plot_graphables(data_new, 'heat_jet', projection, None, None, None, (12, 8), None, 'save', None, 'ex.png', 12)
-
-
+print(len(hours), len(lat), len(lon))
+print(np.shape(wind_data))
 
 

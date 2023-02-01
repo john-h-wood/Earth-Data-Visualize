@@ -46,30 +46,30 @@ print('Saved non-nan count')
 # years_to_do = (2022,)
 
 # ============ COMPUTE AND SAVE FRAC BELOW  ============================================================================
-# start_time = time()
-#
-# for year in years_to_do:
-#     for month in [4, ]: # change back to di.get_months(era5, year, wind_spd)
-#
-#         spec_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (year, month, None, None))
-#         results = di.fraction_below_ordered(spec_data, ordered_winter_data, non_nan_count)
-#         print(np.shape(results.data))
-#
-#         # Create dictionary for saving to mat file
-#         results_dict = dict()
-#         results_dict['lat'] = results.latitude
-#         results_dict['lon'] = results.longitude
-#         results_dict['day_ts'] = np.array(tuple(time[2] for time in results.time_stamps))
-#         results_dict['hour_ts'] = np.array(tuple(time[3] for time in results.time_stamps))
-#
-#         results_dict['fb_ts'] = results.get_component(None, 0)
-#
-#         # Save
-#         month_str = '0' + str(month) if month < 10 else str(month)
-#         savemat(f'/Volumes/My Drive/Moore/data copy/era5/{year}/era5_fb_m{month_str}_y{year}_natl.mat', results_dict)
-#
-#         print(f'Year {year} month {month} saved')
-#
-# end_time = time()
-#
-# print(f'Time take: {end_time - start_time} seconds')
+start_time = time()
+
+for year in years_to_do:
+    for month in [4, ]: # change back to di.get_months(era5, year, wind_spd)
+
+        spec_data = di.get_data_collection_names('ERA5', 'Wind spd (m/s)', None, (year, month, None, None))
+        results = di.fraction_below_ordered(spec_data, ordered_winter_data, non_nan_count)
+        print(np.shape(results.data))
+
+        # Create dictionary for saving to mat file
+        results_dict = dict()
+        results_dict['lat'] = results.latitude
+        results_dict['lon'] = results.longitude
+        results_dict['day_ts'] = np.array(tuple(time[2] for time in results.time_stamps))
+        results_dict['hour_ts'] = np.array(tuple(time[3] for time in results.time_stamps))
+
+        results_dict['fb_ts'] = results.get_component(None, 0)
+
+        # Save
+        month_str = '0' + str(month) if month < 10 else str(month)
+        savemat(f'/Volumes/My Drive/Moore/data copy/era5/{year}/era5_fb_m{month_str}_y{year}_natl.mat', results_dict)
+
+        print(f'Year {year} month {month} saved')
+
+end_time = time()
+
+print(f'Time take: {end_time - start_time} seconds')

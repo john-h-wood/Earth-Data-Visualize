@@ -294,6 +294,15 @@
                     "file_identifier": "ws10m"
                 },
                 {
+                    "name": "Sorted wind spd (m/s)",
+                    "kind": "scalar",
+                    "is_combo": false,
+                    "identifier": -5,
+                    "key": "sws_ts",
+                    "equation": null,
+                    "file_identifier": "sws"
+                },
+                {
                     "name": "Wind dir (deg)",
                     "kind": "scalar",
                     "is_combo": true,

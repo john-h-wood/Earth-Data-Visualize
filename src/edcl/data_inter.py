@@ -393,7 +393,7 @@ class DataCollection(Graphable):
         self.time = time
 
         if limits is None:
-            self.limits = (latitude[0], latitude[-1], longitude[0], longitude[-1])
+            self.limits = (latitude[-1], latitude[0], longitude[0], longitude[-1])
         else:
             self.limits = limits
 
@@ -502,16 +502,20 @@ class DataCollection(Graphable):
         lat_idx = lat_idx[0]
         lon_idx = lon_idx[0]
 
+        return self.get_coordinate_index(time_index, component_index, lat_idx, lon_idx)
+
+
+    def get_coordinate_index(self, time_index, component_index, lat_index, lon_index):
         if component_index >= len(self.data):
             raise ValueError('The given component index is too large.')
 
         if time_index is None:
-            return self.data[component_index][:, lat_idx, lon_idx]
+            return self.data[component_index][:, lat_index, lon_index]
 
         if time_index >= self.get_time_length():
             raise ValueError('The given time index is too large.')
-        # noinspection PyTypeChecker
-        return self.data[component_index][time_index, lat_idx, lon_idx]
+            # noinspection PyTypeChecker
+        return self.data[component_index][time_index, lat_index, lon_index]
 
     def get_vector_dimension(self) -> int:
         """
@@ -525,6 +529,8 @@ class DataCollection(Graphable):
         for component in self.data:
             # noinspection PyUnresolvedReferences
             component.sort(axis=0)
+        # TODO remove time stamps sinnce they are meaningless after time ordering of data
+        # TODO also allow for data to be loaded without time stamps (negative variable ids are time ordered)
         self.title_prefix = 'Ordered ' + self.title_prefix
 
 
@@ -1924,6 +1930,49 @@ DataCollection) -> DataCollection:
     return DataCollection(spec_data_collection.dataset,
                           spec_data_collection.variable, spec_data_collection.time, spec_data_collection.limits,
                           [r for r in results], spec_data_collection.latitude, spec_data_collection.longitude,
+                          title_prefix, title_suffix, spec_data_collection.time_stamps)
+
+
+def fraction_scalar_below_all_sorted_memory(spec_data_collection: DataCollection, ref_non_nan_count):
+    """
+    TODO: Documentation
+    """
+    # Verify assumptions of function
+    if spec_data_collection.get_vector_dimension() != 1:
+        return ValueError('Specific data must be of a scalar.')
+
+    # Results array
+    len_lat, len_lon = spec_data_collection.spread
+    tally_below = np.zeros((spec_data_collection.get_time_length(), len_lat, len_lon))
+
+    # Corresponding sorted variable
+    dataset = spec_data_collection.dataset
+    sorted_variable = _get_variable_identifier(dataset, -1 * spec_data_collection.variable.identifier)
+
+    # Update results after loading in one month of reference data
+    for year in get_years(dataset, sorted_variable):
+        for month in get_months(dataset, year, sorted_variable):
+            sorted_month = _get_data(dataset, sorted_variable, spec_data_collection.limits, (year, month, None, None))
+            print(f'Tallying ref data from {year=}, {month=}')
+
+            # For each coordinate
+            for lat_idx in range(len_lat):
+                for lon_idx in range(len_lon):
+
+                    coordinate_data = spec_data_collection.get_coordinate_index(None, 0, lat_idx, lon_idx)
+                    sorted_coordinate_data = sorted_month.get_coordinate_index(None, 0, lat_idx, lon_idx)
+                    tally_below[:, lat_idx, lon_idx] += np.searchsorted(sorted_coordinate_data, coordinate_data)
+
+    # Divide tally by non-nan-count for results array
+    results = np.divide(tally_below, ref_non_nan_count)
+
+    title_prefix = f'Fraction of all avaiable associated sorted data below' \
+                   f' {spec_data_collection.variable} '
+    title_suffix = f' ({spec_data_collection.dataset})'
+
+    return DataCollection(spec_data_collection.dataset,
+                          spec_data_collection.variable, spec_data_collection.time, spec_data_collection.limits,
+                          [results,], spec_data_collection.latitude, spec_data_collection.longitude,
                           title_prefix, title_suffix, spec_data_collection.time_stamps)
 
 
