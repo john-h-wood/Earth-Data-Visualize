@@ -1541,6 +1541,10 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
         if titles is None:
             title = iterable_to_words(tuple([f'{g.get_time_title(time_index)} ({style})' for g, style in zip(
                 graphables, styles)]))
+            title += f'\nMax limits in deg.: {limits[0]}$\leq$lat$\leq${limits[1]}, {limits[2]}$\leq$lon$\leq$\
+             {limits[3]}'
+            if skip is not None:
+                title += f'\n Vector skip: {skip}'
         else:
             title = titles[time_index]
 
@@ -1554,14 +1558,14 @@ def plot_graphables(graphables: Graphable | tuple[Graphable, ...], styles: str |
                         p = ax.pcolormesh(g.longitude, g.latitude, g.get_component(time_index, 0),
                                           transform=ccrs.PlateCarree(),
                                           cmap=cmap,
-                                          shading='auto',
+                                          shading='nearest',
                                           vmin=ticks[0], vmax=ticks[-1])
                         cbar = fig.colorbar(p, orientation='vertical', ticks=ticks)
                         cbar.ax.set_yticklabels([str(tick) for tick in ticks])
                     else:
                         p = ax.pcolormesh(g.longitude, g.latitude, g.get_component(time_index, 0),
                                           transform=ccrs.PlateCarree(), cmap=cmap,
-                                          shading='auto')
+                                          shading='nearest')
                         fig.colorbar(p, orientation='vertical')
 
                 elif style == 'quiver':
