@@ -50,7 +50,7 @@ ref_non_nan_count = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/a
 # di.plot_graphables(result, 'heat_jet', projection, None, (0.9, 1), None, (12, 8), None, 'save', None, 'ex.png', 12)
 
 # ============ YEAR RUNNER =============================================================================================
-years_to_do = (2022, 2021, 2020, 2019, 2018)
+years_to_do = (2022, 2019, 2018, 2017, 2016, 2015, 2014, 2013)
 
 year_times = list()
 for year in years_to_do:
