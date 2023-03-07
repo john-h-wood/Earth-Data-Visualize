@@ -50,7 +50,7 @@ ref_non_nan_count = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/a
 # di.plot_graphables(result, 'heat_jet', projection, None, (0.9, 1), None, (12, 8), None, 'save', None, 'ex.png', 12)
 
 # ============ YEAR RUNNER =============================================================================================
-years_to_do = (1993,)
+years_to_do = (1983, 1982, 1981, 1980, 1979)
 
 year_times = list()
 for year in years_to_do:

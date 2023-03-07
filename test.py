@@ -12,4 +12,8 @@ import edcl as di
 # print(len(hours), len(lat), len(lon))
 # print(np.shape(wind_data))
 
+import edcl as di
 
+times = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/attempt_three/year_times.pickle')
+for t in times:
+    print(t / (60 * 60))
