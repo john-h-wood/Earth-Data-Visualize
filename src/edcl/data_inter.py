@@ -1197,6 +1197,8 @@ def _load(dataset: Dataset, year: Optional[int], month: Optional[int], variable:
         The data as a dictionary.
 
     """
+    # TODO There are other cases where new data shouldn't be loaded. If the variable is none, but year and month are
+    #  the same, keep current data (should introduce error on trying to time-index sorted wind data)
     _function_call()
 
     global loaded_path, loaded_data, loaded_dataset
@@ -1234,6 +1236,8 @@ def _get_time_index(dataset: Dataset, year: int, month: int, day: int, hour: int
     _function_call()
 
     data = _load(dataset, year, month, None)
+
+    print(loaded_path)
     days = data['day_ts']
     hours = data['hour_ts']
 

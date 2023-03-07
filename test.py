@@ -12,8 +12,8 @@ import edcl as di
 # print(len(hours), len(lat), len(lon))
 # print(np.shape(wind_data))
 
-import edcl as di
+x = loadmat('/Volumes/My Drive/Moore/data copy/era5/2020/era5_sws_m04_y2020_natl.mat', squeeze_me=True)
+print(x.keys())
 
-times = di.load_pickle('/Volumes/My Drive/Moore/pickles/frac_below/attempt_three/year_times.pickle')
-for t in times:
-    print(t / (60 * 60))
+x = di.get_data_collection_names('ERA5', 'Sorted wind spd (m/s)', None, (2020, 4, 19, 12))
+print(x)
