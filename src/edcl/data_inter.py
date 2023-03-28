@@ -36,9 +36,13 @@ Credits
     Counting number of non-nan elements in array from https://stackoverflow.com/questions/21778118/counting-the-number-
     of-non-nan-elements-in-a-numpy-ndarray-in-python by M4rtini. Accessed November 18, 2022.
 
+    Creating video from series of images from https://stackoverflow.com/a/62434934 by trygvrad and Mr_and_Mrs_D.
+    Accessed March 7, 2023. Adapted using moviepy documentation.
+
 """
 
 import json
+import os.path
 import pickle
 import datetime
 import warnings
@@ -51,6 +55,7 @@ import matplotlib.patches as patches
 
 from math import inf
 from glob import glob
+from natsort import os_sorted
 from matplotlib.path import Path
 from numpy.typing import ArrayLike
 from abc import ABC, abstractmethod
@@ -59,6 +64,7 @@ from importlib.resources import files
 from scipy.stats import percentileofscore
 from typing import Union, Optional, Callable
 from matplotlib.figure import Figure as matFigure
+from moviepy.video.io.ImageSequenceClip import ImageSequenceClip
 
 POINT_TYPE = tuple[float, float]
 POINT_INDEX_TYPE = tuple[int, int]
@@ -1170,7 +1176,6 @@ def _get_path(dataset: Dataset, year: Optional[int], month: Optional[int], varia
                     break
 
             if variable is None:
-                print(year, month, dataset)
                 raise ValueError('No available non-combo variable found.')
 
         path += f'_{variable.file_identifier}'
@@ -1237,7 +1242,6 @@ def _get_time_index(dataset: Dataset, year: int, month: int, day: int, hour: int
 
     data = _load(dataset, year, month, None)
 
-    print(loaded_path)
     days = data['day_ts']
     hours = data['hour_ts']
 
@@ -1729,6 +1733,12 @@ def _maximal_limits(limits: tuple[LIMIT_TYPE, ...]) -> LIMIT_TYPE:
     lon_max = np.amax(limit_matrix[:, 3])
 
     return lat_min, lat_max, lon_min, lon_max
+
+def images_to_video(image_directory: str, fps: int, video_path: str) -> None:
+    image_paths = [os.path.join(image_directory, path) for path in os_sorted(os.listdir(image_directory)) if
+                   path.endswith('.png')]
+    clip = ImageSequenceClip(image_paths, fps=fps)
+    clip.write_videofile(video_path, codec='mpeg4')
 
 
 # ======================== STATISTICS ==================================================================================
