@@ -1,5 +1,5 @@
 """
-The data interpretation (data_module) manages all interactions with data.
+The data interpretation (data_inter) module manages all interactions with data.
 
 The module uses info.json to read and store metadata and contains the definitions of the Variable, Dataset,
 Info and Data Collection classes. These classes, and the functions in this module, are to be used either by scripts
@@ -42,8 +42,8 @@ Credits
 """
 
 import json
-import os.path
 import pickle
+import os.path
 import datetime
 import warnings
 import numpy as np
@@ -2271,7 +2271,6 @@ def get_defaults() -> tuple[LIMIT_TYPE, ccrs.Projection]:
         return limits, get_projection_name('Lambert', limits)
     else:
         raise NameError('The default projection, Lambert, is not available according to info.json.')
-
 
 # ======================== MAIN ========================================================================================
 def main():
