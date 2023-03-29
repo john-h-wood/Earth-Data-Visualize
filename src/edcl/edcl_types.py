@@ -17,6 +17,9 @@ LIMITS = tuple[float, float, float, float]
 # A time, specified by a year, month, day and hour. These may all be None to refer to periods of time
 TIME = tuple[Optional[int], Optional[int], Optional[int], Optional[int]]
 
+# A list of times, meant to give a time-title for each slice of data along the time axis in a collection
+TIME_STAMPS = tuple[TIME]
+
 # Earth data, which is a grid of values for each component of data. Wind speed, for example, is a singular 2D grid,
 # but wind vectors are a list of two such grids, one each for the horizontal and vertical components
 GRID_DATA = tuple[ArrayLike] | tuple[ArrayLike, ArrayLike]
