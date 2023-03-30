@@ -7,27 +7,120 @@ files (available years, for example).
 from scipy.io import loadmat
 from .info_classes import Dataset, Variable
 from typing import Optional
-from . import info
+from . import config as cfg
 from .formatting import format_month
 from glob import glob
 from os.path import basename, isfile
 
 
-def get_path(dataset: Dataset, year: int, month: int, variable: Variable) -> str:
+# ======================================================================================================================
+# LOADING
+# ======================================================================================================================
+def get_path(dataset: Dataset, year: int, month: int, variable: Optional[Variable]) -> str:
     """
     Get the formatted filepath for specified grid data. Importantly, this path may or may not exist.
+
+    The variable does not have to specified if the dataset is unified.
 
     Args:
         dataset: The dataset.
         year: The year.
         month: The month.
-        variable: The variable.
+        variable: The variable. Possibly None.
 
     Returns:
         The filepath.
     """
-    return f'{info.directory}/{dataset.directory}/{year}/{dataset.file_prefix}_{variable.file_identifier}_' \
-           f'm{format_month(month)}_y{year}_{dataset.file_suffix}.mat'
+    # Validate parameters
+    if not dataset.is_unified and variable is None:
+        raise ValueError('The variable must be specified for non-unified datasets.')
+
+    if dataset.is_unified:
+        return f'{cfg.info.directory}/{dataset.directory}/{year}/{dataset.file_prefix}_' \
+               f'm{format_month(month)}_y{year}_{dataset.file_suffix}.mat'
+    else:
+        return f'{cfg.info.directory}/{dataset.directory}/{year}/{dataset.file_prefix}_{variable.file_identifier}_' \
+               f'm{format_month(month)}_y{year}_{dataset.file_suffix}.mat'
+
+
+def load(dataset: Optional[Dataset], variable: Optional[Variable], year: Optional[int], month: Optional[int]) -> dict:
+    """
+    Loads desired data, filepath and dataset to global variables. Returns the loaded data.
+
+    Desired data is specified with a dataset, date, time and variable. If one or more of these is None, they will be
+    selected in to avoid re-loading data if possible. A None variable should be used for when the used
+    variable does not matter, for example to gather latitude and longitude information. Using this function increases
+    efficiency by ensuring that dats is not needlessly loaded. Since variables are specific to dataset, the variable
+    not being None means the dataset cannot be None. Only descending nullity is supported. If one parameter is None,
+    every parameter after it must be None.
+
+    Args:
+        dataset: The dataset. Possibly None.
+        year: The year. Possibly None.
+        month: The month. Possibly None.
+        variable: The variable. Possibly None.
+
+    Returns:
+        The data as a dictionary.
+
+    Raises:
+        ValueError: The variable not being None means the dataset cannot be None.
+    """
+    # Validate parameters
+    givens = (dataset, variable, year, month)
+
+    this_is_none = dataset is None
+    for item in givens[1:]:
+        if this_is_none and (item is not None):
+            raise NotImplementedError('Only descending nullity is supported.')
+        this_is_none = item is None
+
+    # Populate unspecified values, making them the loaded values if those exist
+    if dataset is None:
+        if cfg.loaded_dataset is None:
+            cfg.loaded_dataset = cfg.info.datasets[0]
+        dataset = cfg.loaded_dataset
+
+    if variable is None:
+        if cfg.loaded_dataset is dataset:
+            if cfg.loaded_variable is None:
+                cfg.loaded_variable = dataset.variables[0]
+            variable = cfg.loaded_variable
+        else:
+            variable = dataset.variables[0]
+
+    if year is None:
+        if cfg.loaded_dataset is dataset and (cfg.loaded_variable is variable or dataset.is_unified):
+            if cfg.loaded_year is None:
+                cfg.loaded_year = get_years(dataset, variable)[0]
+            year = cfg.loaded_year
+        else:
+            year = get_years(dataset, variable)[0]
+
+    if month is None:
+        if cfg.loaded_dataset is dataset and (cfg.loaded_variable is variable or dataset.is_unified) and \
+           cfg.loaded_year == year:
+            if cfg.loaded_month is None:
+                cfg.loaded_month = get_months(dataset, year, variable)
+            month = cfg.loaded_month
+        else:
+            month = get_months(dataset, year, variable)[0]
+
+    if not all((cfg.loaded_dataset is dataset, (cfg.loaded_variable is variable or dataset.is_unified),
+                cfg.loaded_year == year, cfg.loaded_month == month)):
+        cfg.loaded_dataset = dataset
+        cfg.loaded_variable = variable
+        cfg.loaded_year = year
+        cfg.loaded_month = month
+        cfg.loaded_data = loadmat(get_path(dataset, year, month, variable), squeeze_me=True)
+        print('Loaded new')
+
+    # Requested data could be the same as loaded data params, but loaded data may not have been initialized
+    if cfg.loaded_data is None:
+        cfg.loaded_data = loadmat(get_path(dataset, year, month, variable), squeeze_me=True)
+        print('Loaded new')
+
+    return cfg.loaded_data
 
 
 def get_years(dataset: Dataset, variable: Optional[Variable]) -> list[int]:
@@ -49,7 +142,7 @@ def get_years(dataset: Dataset, variable: Optional[Variable]) -> list[int]:
 
     # Rely on organization within main dataset directory being in years
 
-    for path in glob(f'{info.directory}/{dataset.directory}/*'):
+    for path in glob(f'{cfg.info.directory}/{dataset.directory}/*'):
         # determine if valid year
         test_year = int(basename(path))
         if variable is None:
@@ -78,12 +171,9 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable]) -> lis
     """
     checked_months = list()
     valid_months = list()
-    # TODO add special case for non-unified datasets. Variable must available for a month to be included, unless the
-    #  inputted variable is None
 
     # Access files within the given year's directory
-
-    for path in glob(f'{info.directory}/{dataset.directory}/{year}/*'):
+    for path in glob(f'{cfg.info.directory}/{dataset.directory}/{year}/*'):
         sub_path = basename(path)
         test_month = int(sub_path[sub_path.rindex('_') - 8:sub_path.rindex('_') - 6])  # relies heavily on formatting!
 
@@ -105,3 +195,4 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable]) -> lis
             continue
 
     return sorted(valid_months)
+
