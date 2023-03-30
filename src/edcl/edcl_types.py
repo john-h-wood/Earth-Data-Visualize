@@ -9,7 +9,8 @@ from matplotlib.path import Path
 # grid of latitude/longitude values
 POINT_INDEX = tuple[int, int]
 
-# Limits defining a region on the Earth's surface
+# Limits defining a region on the Earth's surface in latitude/longitude values. They are formatted as
+# (lat_min, lat_max, lon_min, lon_max)
 LIMITS = tuple[float, float, float, float]
 
 # A time, specified by a year, month, day and hour. These may all be None to refer to periods of time
@@ -42,3 +43,6 @@ DATA = GRID | POINT | PATH
 
 # A tuple of DATAs, all of the same type, each associated with a specific time
 DATA_IN_TIME = GRID_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
+
+# Matrix of coordinates (latitude or longitude)
+COORDINATES = ArrayLike
