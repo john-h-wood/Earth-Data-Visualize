@@ -17,7 +17,7 @@
     ],
     "datasets": [
         {
-            "directory": "ascat_winds",
+            "directory": "ascat_a",
             "name": "ASCATa",
             "is_unified": true,
             "file_prefix": "ascata",
@@ -53,7 +53,7 @@
             ]
         },
         {
-            "directory": "ascat_winds",
+            "directory": "ascat_b",
             "name": "ASCATb",
             "is_unified": true,
             "file_prefix": "ascatb",
@@ -89,7 +89,7 @@
             ]
         },
         {
-            "directory": "ascat_winds",
+            "directory": "ascat_c",
             "name": "ASCATc",
             "is_unified": true,
             "file_prefix": "ascatc",

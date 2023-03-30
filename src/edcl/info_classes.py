@@ -41,9 +41,8 @@ class Variable:
             # TODO more advanced validation for equations
         else:
             if key is None: raise ValueError('The key for a non-combo variable should not be None.')
-            if file_identifier is None: raise ValueError('The file identifier for a non-combo variable should not be '
-                                                         'None.')
             if equation is not None: raise ValueError('The equation for a non-combo variable should be None.')
+            # Must validate nullity of file_identifier for non combo variables since this depends on is_unified
 
     def __str__(self) -> str:
         return self.name
@@ -86,6 +85,13 @@ class Dataset:
         self.file_prefix = file_prefix
         self.file_suffix = file_suffix
         self.variables = variables
+
+        # Validate nullity of file_identifiers for non-combo variables
+        for variable in variables:
+            if not variable.is_combo:
+                if not (is_unified == (variable.file_identifier is None)):
+                    raise ValueError('The file identifier for a non-combo must be None for unified datasets and not '
+                                     'None otherwise.')
 
     def __str__(self) -> str:
         return self.name

@@ -2,7 +2,7 @@
 The edcl_formatting module houses all functions for converting information between formats.
 """
 
-from .types import *
+from .types import TIME, TIME_STAMPS
 
 MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October',
           'November', 'December']
