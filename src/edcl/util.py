@@ -7,10 +7,22 @@ Dataset object corresponding to an identifier, or a function to compute maximal 
 import numpy as np
 from . import info
 from .types import *
-from glob import glob
 import cartopy.crs as ccrs
 from .info_classes import Dataset, Variable
-from os.path import basename, isfile
+from . import config
+
+
+def print_loaded() -> None:
+    """
+    Prints metadata for the the currently loaded grid collection dictionary.
+
+    Only one relating dictionary from scipy.io.loadmat is kept at a time an avoid needlessly loading data.
+
+    Returns:
+        None.
+    """
+    print(f'Loaded Dictionary: {config.loaded_dataset}, {config.loaded_variable}, {config.loaded_year}, '
+          f'{config.loaded_month}')
 
 
 def maximal_limits(limits: tuple[LIMITS]) -> LIMITS:

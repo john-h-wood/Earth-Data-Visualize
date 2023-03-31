@@ -11,6 +11,7 @@ from . import config as cfg
 from .formatting import format_month
 from glob import glob
 from os.path import basename, isfile
+import numpy as np
 
 
 # ======================================================================================================================
@@ -108,17 +109,23 @@ def load(dataset: Optional[Dataset], variable: Optional[Variable], year: Optiona
 
     if not all((cfg.loaded_dataset is dataset, (cfg.loaded_variable is variable or dataset.is_unified),
                 cfg.loaded_year == year, cfg.loaded_month == month)):
+        # Check if requested data is available
+        path = get_path(dataset, year, month, variable)
+        if not isfile(path):
+            raise ValueError('The requested data is not available.')
         cfg.loaded_dataset = dataset
         cfg.loaded_variable = variable
         cfg.loaded_year = year
         cfg.loaded_month = month
-        cfg.loaded_data = loadmat(get_path(dataset, year, month, variable), squeeze_me=True)
-        print('Loaded new')
+        cfg.loaded_data = loadmat(path, squeeze_me=True)
 
     # Requested data could be the same as loaded data params, but loaded data may not have been initialized
     if cfg.loaded_data is None:
-        cfg.loaded_data = loadmat(get_path(dataset, year, month, variable), squeeze_me=True)
-        print('Loaded new')
+        # Check if requested data is available
+        path = get_path(dataset, year, month, variable)
+        if not isfile(path):
+            raise ValueError('The requested data is not available.')
+        cfg.loaded_data = loadmat(path, squeeze_me=True)
 
     return cfg.loaded_data
 
@@ -196,3 +203,70 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable]) -> lis
 
     return sorted(valid_months)
 
+
+def get_days(dataset: Dataset, variable: Optional[Variable], year: int, month: int) -> list[int]:
+    """
+    Returns a sorted list of days available within a month of a variable's data.
+
+    The variable may only be unspecified if the data is unified.
+
+    Args:
+        dataset: The dataset.
+        variable: The variable. Possibly None
+        year: The year.
+        month: The month.
+
+    Returns:
+        The days.
+
+    Raises:
+        ValueError: The variable must be specified for non-unified datasets.
+    """
+    # Validate parameters
+    if not dataset.is_unified and variable is None:
+        raise ValueError('The variable must be specified for non-unified datasets.')
+    if variable is None:
+        variable = dataset.variables[0]
+
+    data = load(dataset, variable, year, month)
+    # noinspection PyTypeChecker
+    return np.unique(data['day_ts']).tolist()
+
+
+def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: int) -> list[int]:
+    """
+    Returns a sorted list of hours available within a day of a variable's data.
+
+    The variable may only be unspecified for non-unified datasets.
+
+    Args:
+        dataset: The dataset.
+        variable: The variable. Possibly None.
+        year: The year.
+        month: The month.
+        day: The day.
+
+    Returns:
+        The hours.
+
+    Raises:
+        ValueError: The variable must be specified for non-unified datasets.
+        ValueError: The requested day is not available.
+    """
+    # Validate parameters
+    if not dataset.is_unified and variable is None:
+        raise ValueError('The variable must be specified for non-unified datasets.')
+    if variable is None:
+        variable = dataset.variables[0]
+
+    data = load(dataset, variable, year, month)
+    days = data['day_ts']
+
+    # Check that the requested day is available
+    if day not in days:
+        raise ValueError('The requested day is not available.')
+
+    hours = data['hour_ts']
+    hour_inds = np.asarray(days == day).nonzero()[0]
+
+    return hours[hour_inds[0]:hour_inds[-1] + 1].tolist()
