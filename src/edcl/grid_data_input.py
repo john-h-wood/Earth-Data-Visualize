@@ -1,5 +1,5 @@
 """
-The grid_data_io_util module houses all functions dealing with information gathered from data files for Earth data.
+The grid_data_input module houses all functions dealing with information *gathered* from data files for Earth data.
 These include functions for loading this data into GridCollection objects and functions which read metadata from the
 files (available years, for example).
 """
