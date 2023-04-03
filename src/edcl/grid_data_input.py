@@ -8,9 +8,10 @@ from scipy.io import loadmat
 from .info_classes import Dataset, Variable
 from .types import *
 from typing import Optional
-from .util import get_variable_identifier
+from .util import get_variable_identifier, get_variable_name, get_dataset_name
 from . import config as cfg
 from .formatting import format_month
+from .collections import GridCollection
 from glob import glob
 from os.path import basename, isfile
 import numpy as np
@@ -278,8 +279,57 @@ def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: 
     return hours[hour_inds[0]:hour_inds[-1] + 1].tolist()
 
 
+def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME) -> TIME_STAMPS:
+    """
+    Creates and returns timestamps for a dataset, variable, annd time. There is one time stamp for each index of
+    the data's time axis.
+
+    Time stamps are formatted as a tuple: (year, month, day, hour).
+
+    Returns:
+        The time stamps.
+
+    Raises:
+        ValueError: The given time type is not supported.
+    """
+    # Validate parameters
+    if not time_is_supported(time):
+        raise ValueError('The given time type is not supported.')
+    time_stamps = list()
+    range_year, range_month, range_day, range_hour = time
+
+    if (range_month is not None) and (range_year is None):
+        years = [x for x in get_years(dataset, None) if range_month in get_months(dataset, x, variable)]
+        for year in years:
+            for day in get_days(dataset, variable, year, range_month):
+                for hour in get_hours(dataset, variable, year, range_month, day):
+                    time_stamps.append((year, range_month, day, hour))
+    elif range_year is None:
+        for year in get_years(dataset, variable):
+            for month in get_months(dataset, year, variable):
+                for day in get_days(dataset, variable, year, month):
+                    for hour in get_hours(dataset, variable, year, month, day):
+                        time_stamps.append((year, month, day, hour))
+    elif range_month is None:
+        for month in get_months(dataset, range_year, variable):
+            for day in get_days(dataset, variable, range_year, month):
+                for hour in get_hours(dataset, variable, range_year, month, day):
+                    time_stamps.append((range_year, month, day, hour))
+    elif range_day is None:
+        for day in get_days(dataset, variable, range_year, range_month):
+            for hour in get_hours(dataset, variable, range_year, range_month, day):
+                time_stamps.append((range_year, range_month, day, hour))
+    elif range_hour is None:
+        for hour in get_hours(dataset, variable, range_year, range_month, range_day):
+            time_stamps.append((range_year, range_month, range_day, hour))
+    else:
+        time_stamps.append(time)
+
+    return tuple(time_stamps)
+
+
 # ======================================================================================================================
-# CUTTING
+# CUTTING AND INTERPRETING
 # ======================================================================================================================
 def get_time_index(dataset: Dataset, variable: Optional[Variable], year: int, month: int, day: int, hour: int) -> int:
     """
@@ -429,7 +479,7 @@ def compute_combo_equation(equation_type: str, x: GRID_IN_TIME, y: GRID_IN_TIME)
         raise ValueError('The given equation type is not supported.')
 
 
-def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) -> GRID_IN_TIME:
+def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) -> GRID_IN_TIME:
     """
        Gathers grid data in time for a variable, dataset, time, and cut to coordinate limits.
 
@@ -446,6 +496,9 @@ def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_l
 
        Returns:
            The cut and interpreted data.
+
+        Raises:
+            ValueError: The given time type is not supported.
        """
     # Validate parameters
     if not time_is_supported(time):
@@ -455,8 +508,8 @@ def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_l
         equation_type, x_identifier, y_identifier = variable.equation.split('_')
         x_variable = get_variable_identifier(dataset, int(x_identifier))
         y_variable = get_variable_identifier(dataset, int(y_identifier))
-        x_data = get_interpreted_data(dataset, x_variable, time, idx_limits)
-        y_data = get_interpreted_data(dataset, y_variable, time, idx_limits)
+        x_data = get_interpreted_grid(dataset, x_variable, time, idx_limits)
+        y_data = get_interpreted_grid(dataset, y_variable, time, idx_limits)
 
         return compute_combo_equation(equation_type, x_data, y_data)
 
@@ -465,8 +518,8 @@ def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_l
 
         if (year is None) and (month is not None):
             month_datas = list()
-
-            for year in get_years(dataset, variable):
+            years = [x for x in get_years(dataset, None) if month in get_months(dataset, x, variable)]
+            for year in years:
                 variable_data = load(dataset, variable, year, month)[variable.key]
                 month_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
 
@@ -510,3 +563,56 @@ def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_l
             # Expand to 3D array
             data = np.expand_dims(data, axis=0)
             return data
+
+
+def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> GridCollection:
+    """
+    Gathers grid data for a variable, dataset, time, and coordinate limits and returns it as a GridCollection.
+
+    If the given coordinate limits are None, data for all coordinates is returned.
+
+    Args:
+        dataset: The dataset.
+        variable: The variable.
+        time: The time.
+        limits: The coordinate limits. Possibly None.
+
+    Returns:
+        A GridCollection for the data.
+    """
+    idx_limits = get_coordinate_information(dataset, limits)
+    interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits)
+    title_prefix = f'{dataset.name}: {variable.name} '
+    time_stamps = get_time_stamps(dataset, variable, time)
+
+    # Get latitude and longitude information, which is only dataset-specific
+    data = load(dataset, None, None, None)
+    latitude = data['lat']
+    longitude = data['lon']
+
+    dimension = grid_in_time_components(interpreted_data)
+
+    return GridCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
+                          longitude, dimension)
+
+
+# ======================================================================================================================
+# CONVENIENCE FUNCTIONS
+# ======================================================================================================================
+def get_grid_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: LIMITS) -> GridCollection:
+    """
+    Convenience function which converts a dataset and variable name, time, and limits to a grid collection via
+    conversion methods and the get_grid_collection_method.
+
+    Args:
+        dataset_name: The name of the dataset.
+        variable_name: The name of the variable.
+        time: The time.
+        limits: The limits. Possibly None.
+
+    Returns:
+        The grid collection.
+    """
+    dataset = get_dataset_name(dataset_name)
+    variable = get_variable_name(dataset, variable_name)
+    return get_grid_collection(dataset, variable, time, limits)
