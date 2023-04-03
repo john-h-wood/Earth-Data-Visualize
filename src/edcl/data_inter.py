@@ -355,7 +355,7 @@ class PathCollection(Graphable):
         """
 
         coo_index, latitude, longitude = _get_coordinate_information(self.dataset, self.get_limits())
-        area_grid = _compute_area_grid(latitude, longitude)
+        area_grid = compute_area_grid(latitude, longitude)
 
         is_contained = list()
 
@@ -2071,7 +2071,7 @@ def contour_size_data_collection(data_collection: DataCollection, contour: float
     # fig = plt.figure()
     ax = plt.axes()
 
-    area_grid = _compute_area_grid(data_collection.latitude, data_collection.longitude)
+    area_grid = compute_area_grid(data_collection.latitude, data_collection.longitude)
     text_report = str()
     areas = list()
 
@@ -2112,8 +2112,8 @@ def contour_size_data_collection(data_collection: DataCollection, contour: float
     return text_report, tuple(areas)
 
 
-def find_contour_path_data_collection(data_collection: DataCollection, contour: float, path_index: int) -> \
-        PathCollection:
+def find_contour_path_data_collection(data_collection: DataCollection, contour: float, path_index: Optional[int]) -> \
+        tuple[PathCollection]:
     """
     Finds a specific contour path of a data collection.
 
@@ -2147,17 +2147,26 @@ def find_contour_path_data_collection(data_collection: DataCollection, contour: 
 
     contour_object = cs.collections[0]
 
-    if path_index >= len(contour_object.get_paths()):
-        raise IndexError('Contour path index too large.')
-    path_data = contour_object.get_paths()[path_index]
+    if path_index is not None:
+        if path_index >= len(contour_object.get_paths()):
+            raise IndexError('Contour path index too large.')
+        path_index = tuple(path_index)
+    else:
+        path_index = np.arange(len(contour_object.get_paths()))
 
-    title = f'{path_index + 1}-th path of the {contour}-th contour of {data_collection} '
+    return_values = list()
 
-    return PathCollection(data_collection.dataset, data_collection.variable, data_collection.time, (path_data,),
-                          title, '', data_collection.time_stamps)
+    for p_i in path_index:
+        path_data = contour_object.get_paths()[p_i]
+        title = f'{p_i + 1}-th path of the {contour}-th contour of {data_collection} '
+
+        return_values.append(PathCollection(data_collection.dataset, data_collection.variable, data_collection.time,
+                                     (path_data,), title, '', data_collection.time_stamps))
+
+    return tuple(return_values)
 
 
-def _compute_area_grid(latitude, longitude):
+def compute_area_grid(latitude, longitude):
     """
     Computes a latitude by longitude matrix of 'infinitesimal' spherical surface area elements.
 
@@ -2169,7 +2178,7 @@ def _compute_area_grid(latitude, longitude):
         longitude: Longitude values.
 
     Returns:
-        The area matrix.
+        The area matrix, in square kilometers.
 
     """
     _function_call()
