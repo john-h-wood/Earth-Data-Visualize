@@ -6,6 +6,7 @@ files (available years, for example).
 
 from scipy.io import loadmat
 from .info_classes import Dataset, Variable
+from .types import LIMITS, IDX_LIMITS, COORDINATES
 from typing import Optional
 from . import config as cfg
 from .formatting import format_month
@@ -15,7 +16,7 @@ import numpy as np
 
 
 # ======================================================================================================================
-# LOADING
+# PATHS AND LOADING
 # ======================================================================================================================
 def get_path(dataset: Dataset, year: int, month: int, variable: Optional[Variable]) -> str:
     """
@@ -107,6 +108,7 @@ def load(dataset: Optional[Dataset], variable: Optional[Variable], year: Optiona
         else:
             month = get_months(dataset, year, variable)[0]
 
+    # Special case for unified datasets
     if not all((cfg.loaded_dataset is dataset, (cfg.loaded_variable is variable or dataset.is_unified),
                 cfg.loaded_year == year, cfg.loaded_month == month)):
         # Check if requested data is available
@@ -130,6 +132,9 @@ def load(dataset: Optional[Dataset], variable: Optional[Variable], year: Optiona
     return cfg.loaded_data
 
 
+# ======================================================================================================================
+# COMPUTED METADATA
+# ======================================================================================================================
 def get_years(dataset: Dataset, variable: Optional[Variable]) -> list[int]:
     """
     Returns a sorted list of years for which any data, or a specific variable, is available.
@@ -270,3 +275,97 @@ def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: 
     hour_inds = np.asarray(days == day).nonzero()[0]
 
     return hours[hour_inds[0]:hour_inds[-1] + 1].tolist()
+
+
+# ======================================================================================================================
+# CUTTING
+# ======================================================================================================================
+def get_time_index(dataset: Dataset, variable: Optional[Variable], year: int, month: int, day: int, hour: int) -> int:
+    """
+        Get the time index of the specified dataset, date and time.
+
+        Data is stored in matrices which have their first dimension as an index for each available hour. This
+        function finds that index, to then be used to get hour-specific data. The variable may only be None for
+        non-unified datasets.
+
+        Args:
+            dataset: The dataset.
+            variable: The variable. Possibly None.
+            year: The year.
+            month: The month,
+            day: The day.
+            hour: The hour.
+
+        Returns:
+            The index.
+
+        Raises:
+            ValueError: The variable must be specified for non-unified datasets.
+        """
+    # Validate parameters
+    if not dataset.is_unified and variable is None:
+        raise ValueError('The variable must be specified for non-unified datasets.')
+
+    data = load(dataset, variable, year, month)
+    days = data['day_ts']
+    hours = data['hour_ts']
+
+    hour_inds = np.asarray(days == day).nonzero()[0]
+    hours_sub = hours[hour_inds[0]:hour_inds[-1] + 1].tolist()
+
+    return hour_inds[0] + hours_sub.index(hour)
+
+
+def get_coordinate_information(dataset: Dataset, limits: LIMITS) -> IDX_LIMITS:
+    """
+        Get the coordinate indices corresponding to given coordinate limits.
+
+        Data is stored in matrices which have their first dimension as time. The second and third dimensions refer,
+        respectively, to latitude and longitude. This function returns the index limits for latitude and longitude,
+        given coordinate limits. That is, the upper and lower indices for which both latitude and longitude are
+        within or
+        equal to specified bounds. One is added to the upper indices so that a call such as lat[lat_ind_min:lat_ind_max]
+        yields the expected latitudes.
+
+        Limits are formatted as (lat_min, lat_max, lon_min, lon_max). Return is a tuple with similar ordering,
+        but with indices.
+
+        If the limits are None, the returned indices correspond to all coordinate elements.
+
+        Examples:
+            Limits: (-2, 0, 0, 1)
+            Latitude: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
+            Longitude: [-5, -4, -3, -2, -1, 0, 1, 2, 3]
+
+            Return: (3, 6, 5, 7)
+
+        Args:
+            dataset: The dataset.
+            limits: The limits. Possibly None.
+
+        Returns:
+            The indices.
+
+        Raises:
+            ValueError: The given coordinates are malformed.
+            ValueError: No data is available within the given ranges.
+        """
+    data = load(dataset, None, None, None)
+    latitude = data['lat']
+    longitude = data['lon']
+
+    # Validate parameters (is there any data available for the given limits?)
+    # This check is especially important because a binary bisection for oder preserving is used.
+    lat_min, lat_max, lon_min, lon_max = limits
+    if lat_min > lat_max or lon_min > lon_max:
+        raise ValueError('The given coordinates are malformed.')
+    if (lat_min > latitude[-1] or lat_max < latitude[0]) or (lon_min > longitude[-1] or lon_max < longitude[-1]):
+        raise ValueError('No data is available within the given ranges.')
+
+    if limits is None:
+        return 0, len(latitude), 0, len(longitude)
+
+    lat_min_idx, lat_max_idx = np.searchsorted(latitude, (limits[0], limits[1]))
+    lon_min_idx, lon_max_idx = np.searchsorted(latitude, (limits[2], limits[3]))
+
+    return lat_max_idx, lat_max_idx + 1, lon_min_idx, lon_max_idx + 1

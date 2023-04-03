@@ -1264,7 +1264,7 @@ ArrayLike]:
     yields the expected latitudes.
 
     Limits are formatted as (lat_min, lat_max, lon_min, lon_max). Return is a tuple with similar ordering,
-    but with indices.
+    but with indices, the cut latitudes, and the cut longitudes.
 
     If the limits are None, the returned indices correspond to all corrinate elements and the returned lat/lon
     vectors constitute all available coordinates.

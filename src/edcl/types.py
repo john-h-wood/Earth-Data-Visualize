@@ -14,6 +14,10 @@ POINT_INDEX = tuple[int, int]
 # (lat_min, lat_max, lon_min, lon_max)
 LIMITS = tuple[float, float, float, float]
 
+# Limits defining a region on the Earth's surface in the space of indices of the latitude/longitude vectors. They are
+# formatted as the LIMITS type, but with indices
+IDX_LIMITS = tuple[int, int, int, int]
+
 # A time, specified by a year, month, day and hour. These may all be None to refer to periods of time
 TIME = tuple[Optional[int], Optional[int], Optional[int], Optional[int]]
 
