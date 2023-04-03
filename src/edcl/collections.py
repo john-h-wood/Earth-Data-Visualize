@@ -4,6 +4,8 @@ given location and over a given time period.
 """
 
 from abc import ABC, abstractmethod
+
+from . import maximal_limits
 from .info_classes import Dataset, Variable
 from .formatting import time_to_suffix
 from .types import *
