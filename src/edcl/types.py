@@ -35,13 +35,13 @@ POINT = tuple[float, float]
 PATH = Path
 
 # A tuple of GRIDs, each associated with a specific time
-GRID_IN_TIME = tuple[GRID]
+GRID_IN_TIME = tuple[ArrayLike, ...] | tuple[tuple[ArrayLike, ArrayLike], ...]
 
 # A tuple of POINTs, each associated with a specific time
-POINT_IN_TIME = tuple[POINT]
+POINT_IN_TIME = tuple[tuple[float, float], ...]
 
 # A tuple of PATHS, each associated with a specific time
-PATH_IN_TIME = tuple[PATH]
+PATH_IN_TIME = tuple[Path, ...]
 
 # Generic data
 DATA = GRID | POINT | PATH
@@ -54,3 +54,59 @@ COORDINATES = ArrayLike
 
 # Map projection from Cartopy
 PROJECTION = Projection
+
+
+def grid_in_time_components(grid_in_time: GRID_IN_TIME) -> int:
+    """
+    Determine the number of components in a grid in time. A grid in time for scalars would yield 1 for example.
+
+    Assumes, from the type definition of GRID_IN_TIME, that each grid in the time tuple has the same number components.
+
+    Args:
+        grid_in_time: The grid in time.
+
+    Returns:
+        The number of components. Zero if the grid in time is empty or if its grids are empty.
+    """
+    if len(grid_in_time) == 0:
+        return 0
+    else:
+        example_grid = grid_in_time[0]
+        if isinstance(example_grid, tuple):
+            return len(example_grid) # should always just be two
+        else:
+            return 1
+
+
+def time_is_supported(time: TIME) -> bool:
+    """
+    Whether the given time is supported. This is determined by the nullity of the time tuple elements.
+
+    In terms of nullity, supported time types are, where given is the same as not none:
+    Year          Month          Day          Hour
+    given         given          given        given
+    given         given          given        none
+    given         given          none         none
+    given         none           none         none
+    none          none           none         none
+    none          given          none         none
+
+    Args:
+        time: The time.
+
+    Returns:
+        Whether the time is supported.
+    """
+    year, month, day, hour = time
+    # Special case for given month only
+    if month is not None and year is None and day is None and hour is None:
+        return True
+
+    # Otherwise, only descending nullity is allowed
+    else:
+        this_is_none = year is None
+        for item in time[1:]:
+            if this_is_none and (item is not None):
+                return False
+            this_is_none = item is None
+    return True
