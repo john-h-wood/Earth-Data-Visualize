@@ -91,7 +91,7 @@ def get_variable_name(dataset: Dataset, name: str) -> Variable:
     raise ValueError('No such variable was found.')
 
 
-def _get_variable_identifier(dataset: Dataset, identifier: int) -> Variable:
+def get_variable_identifier(dataset: Dataset, identifier: int) -> Variable:
     """
     Get the first variable object with the given identifier from a dataset.
 
