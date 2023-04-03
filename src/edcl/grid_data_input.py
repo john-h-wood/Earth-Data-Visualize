@@ -348,24 +348,32 @@ def get_coordinate_information(dataset: Dataset, limits: LIMITS) -> IDX_LIMITS:
 
         Raises:
             ValueError: The given coordinates are malformed.
-            ValueError: No data is available within the given ranges.
+            ValueError: No data is available within the given latitude range.
+            ValueError: No data is available within the given longitude range.
         """
     data = load(dataset, None, None, None)
-    latitude = data['lat']
+    latitude = np.flip(data['lat']) # TODO very important assumption about coordinate data ordering. Check this
     longitude = data['lon']
+
+    # Check this first. It wouldn't pass the parameter validation because of nullity
+    if limits is None:
+        return 0, len(latitude), 0, len(longitude)
 
     # Validate parameters (is there any data available for the given limits?)
     # This check is especially important because a binary bisection for oder preserving is used.
     lat_min, lat_max, lon_min, lon_max = limits
     if lat_min > lat_max or lon_min > lon_max:
         raise ValueError('The given coordinates are malformed.')
-    if (lat_min > latitude[-1] or lat_max < latitude[0]) or (lon_min > longitude[-1] or lon_max < longitude[-1]):
-        raise ValueError('No data is available within the given ranges.')
+    if lat_min > latitude[-1] or lat_max < latitude[0]:
+        raise ValueError('No data is available within the given latitude range.')
+    if lon_min > longitude[-1] or lon_max < longitude[0]:
+        raise ValueError('No data is available within the given longitude range.')
 
-    if limits is None:
-        return 0, len(latitude), 0, len(longitude)
+    lat_min_idx, lat_max_idx = np.searchsorted(latitude, (lat_min, lat_max))
+    lon_min_idx, lon_max_idx = np.searchsorted(longitude, (lon_min, lon_max))
 
-    lat_min_idx, lat_max_idx = np.searchsorted(latitude, (limits[0], limits[1]))
-    lon_min_idx, lon_max_idx = np.searchsorted(latitude, (limits[2], limits[3]))
+    # Covert latitude values to un-flipped indices
+    unflipped_lat_min_idx = (len(latitude) - 1) - lat_max_idx
+    unflipped_lat_max_idx = (len(latitude) - 1) - lat_min_idx
 
-    return lat_max_idx, lat_max_idx + 1, lon_min_idx, lon_max_idx + 1
+    return unflipped_lat_min_idx, unflipped_lat_max_idx + 1, lon_min_idx, lon_max_idx + 1
