@@ -6,8 +6,9 @@ files (available years, for example).
 
 from scipy.io import loadmat
 from .info_classes import Dataset, Variable
-from .types import LIMITS, IDX_LIMITS, COORDINATES
+from .types import *
 from typing import Optional
+from .util import get_variable_identifier
 from . import config as cfg
 from .formatting import format_month
 from glob import glob
@@ -377,3 +378,135 @@ def get_coordinate_information(dataset: Dataset, limits: LIMITS) -> IDX_LIMITS:
     unflipped_lat_max_idx = (len(latitude) - 1) - lat_min_idx
 
     return unflipped_lat_min_idx, unflipped_lat_max_idx + 1, lon_min_idx, lon_max_idx + 1
+
+
+def compute_combo_equation(equation_type: str, x: GRID_IN_TIME, y: GRID_IN_TIME) -> GRID_IN_TIME:
+    """
+        Get the result of a combo variable equation.
+
+        Takes an equation type and two component variables to yield a single combo variable. The components must have
+        the same size. They mare or may not have the same number of coordinates; a combo variable could be defined
+        which has a two-component grid as one of its constituent variables.
+
+        Supported equations are:
+        - 'norm': np.sqrt(np.square(x) + np.square(y))
+        - 'component': (x, y)
+        - 'polar': (x * np.sin(np.deg2rad(y)), x * np.cos(np.deg2rad(y)))
+        - 'direction': np.rad2deg(np.arctan2(y, x)) - 90
+
+        Args:
+            equation_type: The equation.
+            x: The first component.
+            y: The second component.
+
+        Returns:
+            The combo variable as a tuple of Numpy arrays, one for each resulting component.
+
+        Raises:
+            ValueError: The given equation type is not supported.
+            ValueError: Component equation: Inputs must have single component and same size.
+            ValueError: Polar equation: Inputs must have single component and same size.
+            ValueError: Norm equation: Inputs must have single component and same size.
+            ValueError: Direction equation: Inputs must have single component and same size.
+        """
+    if equation_type == 'component':
+        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
+            raise ValueError('Component equation: Inputs must have single component and same size.')
+        return x, y
+    elif equation_type == 'polar':
+        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
+            raise ValueError('Polar equation: Inputs must have single component and same size.')
+        return x * np.sin(np.deg2rad(y)), x * np.cos(np.deg2rad(y))
+    elif equation_type == 'norm':
+        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
+            raise ValueError('Norm equation: Inputs must have single component and same size.')
+        return np.sqrt(np.square(x) + np.square(y))
+    elif equation_type == 'direction':
+        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
+            raise ValueError('Direction equation: Inputs must have single component and same size.')
+        return np.rad2deg(np.arctan2(y, x)) - 90  # TODO use oceanographic convention. This equation is wrong.
+    else:
+        raise ValueError('The given equation type is not supported.')
+
+
+def get_interpreted_data(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) -> GRID_IN_TIME:
+    """
+       Gathers grid data in time for a variable, dataset, time, and cut to coordinate limits.
+
+       Performs any calculations coming from combo variables.
+       This function is separate from others, including get_data, because it uses recursion for combo_variable
+       computation.
+
+
+       Args:
+           dataset: The dataset.
+           variable: The variable.
+           time: The time.
+           idx_limits: The coordinate limit indices.
+
+       Returns:
+           The cut and interpreted data.
+       """
+    # Validate parameters
+    if not time_is_supported(time):
+        raise ValueError('The given time type is not supported.')
+
+    if variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_data = get_interpreted_data(dataset, x_variable, time, idx_limits)
+        y_data = get_interpreted_data(dataset, y_variable, time, idx_limits)
+
+        return compute_combo_equation(equation_type, x_data, y_data)
+
+    else:
+        year, month, day, hour = time
+
+        if (year is None) and (month is not None):
+            month_datas = list()
+
+            for year in get_years(dataset, variable):
+                variable_data = load(dataset, variable, year, month)[variable.key]
+                month_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
+
+            return np.concatenate(month_datas)
+
+        elif year is None:
+            year_datas = list()
+
+            for year in get_years(dataset, variable):
+                for month in get_months(dataset, year, variable):
+                    variable_data = load(dataset, variable, year, month)[variable.key]
+                    year_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
+            return np.concatenate(year_datas)
+
+        elif month is None:
+            month_datas = list()
+
+            for month in get_months(dataset, year, variable):
+                variable_data = load(dataset, variable, year, month)[variable.key]
+                month_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
+            return np.concatenate(month_datas)
+
+        elif day is None:
+            variable_data = load(dataset, variable, year, month)[variable.key]
+            return variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
+
+        elif hour is None:
+            hours = get_hours(dataset, variable, year, month, day)
+            variable_data = load(dataset, variable, year, month)[variable.key]
+            start_time_index = get_time_index(dataset, variable, year, month, day, hours[0])
+            end_time_index = get_time_index(dataset, variable, year, month, day, hours[-1])
+
+            return variable_data[start_time_index:end_time_index + 1,
+                                 idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
+
+        else:
+            variable_data = load(dataset, variable, year, month)[variable.key]
+            time_index = get_time_index(dataset, variable, year, month, day, hour)
+            data = variable_data[time_index, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
+
+            # Expand to 3D array
+            data = np.expand_dims(data, axis=0)
+            return data
