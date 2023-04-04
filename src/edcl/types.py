@@ -2,8 +2,8 @@
 The edcl_types (so named to avoid conflict with Python's types module) module houses typing definitions.
 """
 from typing import Optional
-from numpy.typing import ArrayLike
 from matplotlib.path import Path
+from numpy.typing import ArrayLike
 from cartopy.crs import Projection
 
 # A point on the Earth's surface specified by a pair of indices. These refer to the index of the point in a regular

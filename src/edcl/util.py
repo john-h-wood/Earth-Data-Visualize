@@ -5,11 +5,12 @@ Dataset object corresponding to an identifier, or a function to compute maximal 
 """
 
 import numpy as np
-from . import info
-from .types import *
 import cartopy.crs as ccrs
-from .info_classes import Dataset, Variable
+
+from . import info
+from .types import LIMITS, PROJECTION
 from . import config
+from .info_classes import Dataset, Variable
 
 
 def print_loaded() -> None:

@@ -2,9 +2,10 @@
 The globals module houses all global variables. These are initialized when edcl is imported.
 """
 
-from .info_classes import Info
 import json
 from importlib.resources import files
+
+from .info_classes import Info
 
 
 # Instance of the Info class which stores all metadata

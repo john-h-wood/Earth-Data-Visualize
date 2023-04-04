@@ -4,18 +4,18 @@ These include functions for loading this data into GridCollection objects and fu
 files (available years, for example).
 """
 
+import numpy as np
+from glob import glob
 from scipy.io import loadmat
-from .info_classes import Dataset, Variable
-from .types import *
+from os.path import basename, isfile
+
 from typing import Optional
-from .util import get_variable_identifier, get_variable_name, get_dataset_name
 from . import config as cfg
 from .formatting import format_month
 from .collections import GridCollection
-from glob import glob
-from os.path import basename, isfile
-import numpy as np
-
+from .info_classes import Dataset, Variable
+from .util import get_variable_identifier, get_variable_name, get_dataset_name
+from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, GRID_IN_TIME, grid_in_time_components, time_is_supported
 
 # ======================================================================================================================
 # PATHS AND LOADING

@@ -5,6 +5,7 @@ about available data, for example the names of datasets and their corresponding 
 
 from typing import Optional
 
+
 class Variable:
     """
     Class representing a variable and its metadata, including type, name, etc.
