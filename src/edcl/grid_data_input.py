@@ -17,6 +17,7 @@ from .info_classes import Dataset, Variable
 from .util import get_variable_identifier, get_variable_name, get_dataset_name
 from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, GRID_IN_TIME, grid_in_time_components, time_is_supported
 
+
 # ======================================================================================================================
 # PATHS AND LOADING
 # ======================================================================================================================
@@ -414,7 +415,7 @@ def get_coordinate_information(dataset: Dataset, limits: LIMITS) -> IDX_LIMITS:
     # This check is especially important because a binary bisection for oder preserving is used.
     lat_min, lat_max, lon_min, lon_max = limits
     if lat_min > lat_max or lon_min > lon_max:
-        raise ValueError('The given coordinates are malformed.')
+        raise ValueError('The given limits are not formatted correctly.')
     if lat_min > latitude[-1] or lat_max < latitude[0]:
         raise ValueError('No data is available within the given latitude range.')
     if lon_min > longitude[-1] or lon_max < longitude[0]:
@@ -587,8 +588,8 @@ def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits
 
     # Get latitude and longitude information, which is only dataset-specific
     data = load(dataset, None, None, None)
-    latitude = data['lat']
-    longitude = data['lon']
+    latitude = data['lat'][idx_limits[0]:idx_limits[1]]
+    longitude = data['lon'][idx_limits[2]:idx_limits[3]]
 
     dimension = grid_in_time_components(interpreted_data)
 
@@ -599,7 +600,8 @@ def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits
 # ======================================================================================================================
 # CONVENIENCE FUNCTIONS
 # ======================================================================================================================
-def get_grid_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: LIMITS) -> GridCollection:
+def get_grid_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS]) -> \
+        GridCollection:
     """
     Convenience function which converts a dataset and variable name, time, and limits to a grid collection via
     conversion methods and the get_grid_collection_method.

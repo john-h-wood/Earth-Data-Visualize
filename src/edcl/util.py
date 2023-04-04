@@ -141,3 +141,56 @@ def get_projection_name(name: str, limits: LIMITS = None) -> PROJECTION:
     elif name == 'Plate Carree':
         return ccrs.PlateCarree()
     else: raise ValueError('No such projection found.')
+
+
+def to_tuple(element: object) -> tuple:
+    """
+    Convert an object to a tuple, if it not already one.
+    Args:
+        element: The object.
+
+    Returns:
+        The object as a tuple, if it is not already one. Otherwise, the object.
+    """
+    if not isinstance(element, tuple):
+        return element,
+    else:
+        return element
+
+
+def convertable_to_float(element: object) -> bool:
+    """
+    Whether the element can be converted to a float.
+
+    This code is taken from https://www.programiz.com/python-programming/examples/check-string-number
+
+    Args:
+        element: The element.
+
+    Returns:
+        Whether the element can be converted to a float.
+    """
+    try:
+        float(element)
+        return True
+    except ValueError:
+        return False
+
+
+def convertable_to_int(element: object) -> bool:
+    """
+    Whether the element can be converted to an int.
+
+    This code is adapted from https://www.programiz.com/python-programming/examples/check-string-number
+
+    Args:
+        element: The element.
+
+    Returns:
+        Whether the element can be converted to an int.
+    """
+    try:
+        int(element)
+        return True
+    except ValueError:
+        return False

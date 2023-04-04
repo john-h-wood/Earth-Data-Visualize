@@ -1,5 +1,5 @@
 """
-The ollections module house Collection classes, which define objects with data and metadata for a variable at a
+The collections module house DataCollection classes, which define objects with data and metadata for a variable at a
 given location and over a given time period.
 """
 
@@ -12,7 +12,7 @@ from .formatting import time_to_suffix
 from .info_classes import Dataset, Variable
 
 
-class Collection(ABC):
+class DataCollection(ABC):
     """
     The parent class for all collections of data at a given location and over a given time period. Includes metadata.
     """
@@ -38,15 +38,15 @@ class Collection(ABC):
         self.data_in_time = data_in_time
 
         # Parameter validation
-        if len(time_stamps) != len(data_in_time): raise ValueError('The lengths of the Collection time stamps and its'
-                                                                   'data in time must be equal.')
+        if len(time_stamps) != len(data_in_time): raise ValueError('The lengths of the DataCollection time stamps and '
+                                                                   'its data in time must be equal.')
 
     def __str__(self):
         return f'{self.title_prefix}{time_to_suffix(self.time)}{self.title_suffix}'
 
     def get_time_title(self, time_index) -> str:
         """
-        The title of the Collection at a certain time.
+        The title of the DataCollection at a certain time.
         Args:
             time_index: The time index.
 
@@ -57,7 +57,7 @@ class Collection(ABC):
 
     def get_time_length(self) -> int:
         """
-        The length of the Collection's data in time.
+        The length of the DataCollection's data in time.
 
         Returns:
             The time length.
@@ -73,7 +73,7 @@ class Collection(ABC):
         ...
 
 
-class GridCollection(Collection):
+class GridCollection(DataCollection):
     """
     Class storing all information for Earth data, including its dataset, variable, time, etc. This might,
     for example, store wind speed over time for a square region on the Earth.
@@ -99,7 +99,7 @@ class GridCollection(Collection):
         return np.min(self.latitude), np.max(self.latitude), np.min(self.longitude), np.max(self.longitude)
 
 
-class PointCollection(Collection):
+class PointCollection(DataCollection):
     """
     Class storing all information for a point, including dataset, variable, time, position over time, etc.
     """
@@ -121,7 +121,7 @@ class PointCollection(Collection):
         return np.min(latitudes), np.max(latitudes), np.min(longitudes), np.max(longitudes)
 
 
-class PathCollection(Collection):
+class PathCollection(DataCollection):
     """
     Class storing all information for a path, including dataset, variable, time, path points over time, etc.
     """

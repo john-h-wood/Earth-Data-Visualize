@@ -6,9 +6,11 @@
         "Robinson"
     ],
     "graph_styles": [
-        "quiver",
         "heat",
-        "contour"
+        "contour",
+        "quiver",
+        "patch",
+        "point"
     ],
     "graph_out_modes": [
         "show",

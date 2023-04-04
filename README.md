@@ -3,7 +3,7 @@
 This repository hosts the results of my work as a research assistant for Professor Kent Moore at the University of Toronto. Out of this work results two products: a package (edcl) for abstracting and plotting Earth data, and scripts leveraging this package for research into the extremity of tip jets off Cape Farewell, Greenland.
 
 ## The Package
-The edcl, or Earth Data Collection package abstracts Earth Data with an object-oriented fashion to simplify statistics on and visualization of Earth data. The name comes from the primary class, `DataCollection`. Which stores metadata and data itself for a variable, time period and region.
+The edcl, or Earth Data DataCollection package abstracts Earth Data with an object-oriented fashion to simplify statistics on and visualization of Earth data. The name comes from the primary class, `DataCollection`. Which stores metadata and data itself for a variable, time period and region.
 
 ## The Research
 ### _Abstract:_
