@@ -6,11 +6,14 @@ Dataset object corresponding to an identifier, or a function to compute maximal 
 
 import numpy as np
 import cartopy.crs as ccrs
+from typing import TypeVar
 
 from . import info
 from .types import LIMITS, PROJECTION
 from . import config
 from .info_classes import Dataset, Variable
+
+T = TypeVar('T')
 
 
 def print_loaded() -> None:
@@ -143,7 +146,7 @@ def get_projection_name(name: str, limits: LIMITS = None) -> PROJECTION:
     else: raise ValueError('No such projection found.')
 
 
-def to_tuple(element: object) -> tuple:
+def to_tuple(element: T) -> tuple[T]:
     """
     Convert an object to a tuple, if it not already one.
     Args:

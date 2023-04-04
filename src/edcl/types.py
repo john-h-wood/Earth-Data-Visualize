@@ -24,9 +24,9 @@ TIME = tuple[Optional[int], Optional[int], Optional[int], Optional[int]]
 # A list of times, meant to give a time-title for each slice of data along the time axis in a collection
 TIME_STAMPS = tuple[TIME, ...]
 
-# Earth data, which is a grid of values for each component of data. Wind speed, for example, is a singular 2D grid,
-# but wind vectors are a list of two such grids, one each for the horizontal and vertical components
-GRID = ArrayLike | tuple[ArrayLike, ArrayLike]
+# Were more specific typing available, this would be a three-dimensional np array of floats. The first axis is for
+# the component of the vector data. The second and third locate the vector on a latitude/longitude grid.
+VECTOR_GRID = ArrayLike
 
 # A point on the Earth's surface specified by a pair of latitude/longitude coordinates
 POINT = tuple[float, float]
@@ -34,8 +34,9 @@ POINT = tuple[float, float]
 # A path on the Earth's surface, specified by the latitude/longitude coordinates of a series of points. See
 PATH = Path
 
-# A tuple of GRIDs, each associated with a specific time
-GRID_IN_TIME = tuple[ArrayLike, ...] | tuple[tuple[ArrayLike, ArrayLike], ...]
+# Were more specific typing available, this would be a four-dimensional np array of floats. The first axis is time,
+# along which we have a series of VECTOR_GRIDs, each with specific to a moment in time.
+VECTOR_IN_TIME = ArrayLike
 
 # A tuple of POINTs, each associated with a specific time
 POINT_IN_TIME = tuple[tuple[float, float], ...]
@@ -44,10 +45,10 @@ POINT_IN_TIME = tuple[tuple[float, float], ...]
 PATH_IN_TIME = tuple[Path, ...]
 
 # Generic data
-DATA = GRID | POINT | PATH
+DATA = VECTOR_GRID | POINT | PATH
 
 # A tuple of DATAs, all of the same type, each associated with a specific time
-DATA_IN_TIME = GRID_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
+DATA_IN_TIME = VECTOR_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
 
 # Matrix of coordinates (latitude or longitude)
 COORDINATES = ArrayLike
@@ -56,26 +57,26 @@ COORDINATES = ArrayLike
 PROJECTION = Projection
 
 
-def grid_in_time_components(grid_in_time: GRID_IN_TIME) -> int:
-    """
-    Determine the number of components in a grid in time. A grid in time for scalars would yield 1 for example.
-
-    Assumes, from the type definition of GRID_IN_TIME, that each grid in the time tuple has the same number components.
-
-    Args:
-        grid_in_time: The grid in time.
-
-    Returns:
-        The number of components. Zero if the grid in time is empty or if its grids are empty.
-    """
-    if len(grid_in_time) == 0:
-        return 0
-    else:
-        example_grid = grid_in_time[0]
-        if isinstance(example_grid, tuple):
-            return len(example_grid) # should always just be two
-        else:
-            return 1
+# def grid_in_time_components(grid_in_time: GRID_IN_TIME) -> int:
+#     """
+#     Determine the number of components in a grid in time. A grid in time for scalars would yield 1 for example.
+#
+#     Assumes, from the type definition of GRID_IN_TIME, that each grid in the time tuple has the same number components.
+#
+#     Args:
+#         grid_in_time: The grid in time.
+#
+#     Returns:
+#         The number of components. Zero if the grid in time is empty or if its grids are empty.
+#     """
+#     if len(grid_in_time) == 0:
+#         return 0
+#     else:
+#         example_grid = grid_in_time[0]
+#         if isinstance(example_grid, tuple):
+#             return len(example_grid) # should always just be two
+#         else:
+#             return 1
 
 
 def time_is_supported(time: TIME) -> bool:

@@ -15,7 +15,8 @@ from .formatting import format_month
 from .collections import GridCollection
 from .info_classes import Dataset, Variable
 from .util import get_variable_identifier, get_variable_name, get_dataset_name
-from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, GRID_IN_TIME, grid_in_time_components, time_is_supported
+from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, GRID_IN_TIME, ArrayLike, grid_in_time_components,\
+                   time_is_supported
 
 
 # ======================================================================================================================
@@ -566,6 +567,11 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
             return data
 
 
+def np_3d_to_grid_in_time(data: ArrayLike) -> GRID_IN_TIME:
+    grid_in_time = list()
+    for time_index in range
+
+
 def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> GridCollection:
     """
     Gathers grid data for a variable, dataset, time, and coordinate limits and returns it as a GridCollection.
@@ -592,6 +598,9 @@ def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits
     longitude = data['lon'][idx_limits[2]:idx_limits[3]]
 
     dimension = grid_in_time_components(interpreted_data)
+
+    print(type(interpreted_data))
+    print(len(interpreted_data))
 
     return GridCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
                           longitude, dimension)

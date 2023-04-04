@@ -170,3 +170,4 @@ def format_coordinates(latitude: float, longitude: float) -> str:
         result += f'{abs(longitude)}\N{DEGREE SIGN} W'
 
     return result
+
