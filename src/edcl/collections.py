@@ -73,20 +73,18 @@ class DataCollection(ABC):
         ...
 
 
-class GridCollection(DataCollection):
+class VectorCollection(DataCollection):
     """
-    Class storing all information for Earth data, including its dataset, variable, time, etc. This might,
-    for example, store wind speed over time for a square region on the Earth.
+    Class storing all information for Earth vector (or scalar) data, including its dataset, variable, time,
+    etc. This might, for example, store wind speed over time for a square region on the Earth.
     """
     def __init__(self, dataset: Dataset, variable: Variable, time: TIME, time_stamps: TIME_STAMPS, title_prefix: str,
-                 title_suffix: str, data_in_time: GRID_IN_TIME, latitude: COORDINATES, longitude: COORDINATES,
-                 dimension: int):
+                 title_suffix: str, data_in_time: VECTOR_GRID_IN_TIME, latitude: COORDINATES, longitude: COORDINATES):
         super().__init__(dataset, variable, time, time_stamps, title_prefix, title_suffix, data_in_time)
         self.latitude = latitude
         self.longitude = longitude
-        self.dimension = dimension
 
-    def get_time_data(self, time_index: int) -> GRID:
+    def get_time_data(self, time_index: int) -> VECTOR_GRID:
         return self.data_in_time[time_index]
 
     def get_limits(self) -> LIMITS:
@@ -97,6 +95,9 @@ class GridCollection(DataCollection):
             The limits.
         """
         return np.min(self.latitude), np.max(self.latitude), np.min(self.longitude), np.max(self.longitude)
+
+    def get_dimension(self) -> int:
+        return np.shape(self.data_in_time)[1]
 
 
 class PointCollection(DataCollection):

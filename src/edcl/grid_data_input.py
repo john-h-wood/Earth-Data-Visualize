@@ -12,10 +12,10 @@ from os.path import basename, isfile
 from typing import Optional
 from . import config as cfg
 from .formatting import format_month
-from .collections import GridCollection
+from .collections import VectorCollection
 from .info_classes import Dataset, Variable
 from .util import get_variable_identifier, get_variable_name, get_dataset_name
-from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, GRID_IN_TIME, ArrayLike, grid_in_time_components,\
+from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, VECTOR_GRID_IN_TIME, SCALAR_GRID_IN_TIME, ArrayLike, \
                    time_is_supported
 
 
@@ -118,6 +118,7 @@ def load(dataset: Optional[Dataset], variable: Optional[Variable], year: Optiona
         # Check if requested data is available
         path = get_path(dataset, year, month, variable)
         if not isfile(path):
+            print(path)
             raise ValueError('The requested data is not available.')
         cfg.loaded_dataset = dataset
         cfg.loaded_variable = variable
@@ -154,6 +155,16 @@ def get_years(dataset: Dataset, variable: Optional[Variable]) -> list[int]:
         The years.
 
     """
+    # Special case for combo variable: result is union of recursively found years for constituent variables
+    if variable is not None and variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_years = get_years(dataset, x_variable)
+        y_years = get_years(dataset, y_variable)
+
+        return np.union1d(x_years, y_years).tolist()
+
     years = list()
 
     # Rely on organization within main dataset directory being in years
@@ -185,6 +196,16 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable]) -> lis
     Returns:
         The months.
     """
+    # Special case for combo variable: result is union of recursively found months for constituent variables
+    if variable is not None and variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_months = get_months(dataset, year, x_variable)
+        y_months = get_months(dataset, year, y_variable)
+
+        return np.union1d(x_months, y_months).tolist()
+
     checked_months = list()
     valid_months = list()
 
@@ -237,6 +258,16 @@ def get_days(dataset: Dataset, variable: Optional[Variable], year: int, month: i
     if variable is None:
         variable = dataset.variables[0]
 
+    # Special case for combo variable: result is union of recursively found days for constituent variables
+    if variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_days = get_days(dataset, x_variable, year, month)
+        y_days = get_days(dataset, y_variable, year, month)
+
+        return np.union1d(x_days, y_days).tolist()
+
     data = load(dataset, variable, year, month)
     # noinspection PyTypeChecker
     return np.unique(data['day_ts']).tolist()
@@ -267,6 +298,16 @@ def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: 
         raise ValueError('The variable must be specified for non-unified datasets.')
     if variable is None:
         variable = dataset.variables[0]
+
+    # Special case for combo variable: result is union of recursively found hours for constituent variables
+    if variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_hours = get_hours(dataset, x_variable, year, month, day)
+        y_hours = get_hours(dataset, y_variable, year, month, day)
+
+        return np.union1d(x_hours, y_hours).tolist()
 
     data = load(dataset, variable, year, month)
     days = data['day_ts']
@@ -432,7 +473,8 @@ def get_coordinate_information(dataset: Dataset, limits: LIMITS) -> IDX_LIMITS:
     return unflipped_lat_min_idx, unflipped_lat_max_idx + 1, lon_min_idx, lon_max_idx + 1
 
 
-def compute_combo_equation(equation_type: str, x: GRID_IN_TIME, y: GRID_IN_TIME) -> GRID_IN_TIME:
+def compute_combo_equation(equation_type: str, x: SCALAR_GRID_IN_TIME, y: SCALAR_GRID_IN_TIME) -> \
+        tuple[SCALAR_GRID_IN_TIME, ...]:
     """
         Get the result of a combo variable equation.
 
@@ -456,32 +498,21 @@ def compute_combo_equation(equation_type: str, x: GRID_IN_TIME, y: GRID_IN_TIME)
 
         Raises:
             ValueError: The given equation type is not supported.
-            ValueError: Component equation: Inputs must have single component and same size.
-            ValueError: Polar equation: Inputs must have single component and same size.
-            ValueError: Norm equation: Inputs must have single component and same size.
-            ValueError: Direction equation: Inputs must have single component and same size.
         """
     if equation_type == 'component':
-        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
-            raise ValueError('Component equation: Inputs must have single component and same size.')
         return x, y
     elif equation_type == 'polar':
-        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
-            raise ValueError('Polar equation: Inputs must have single component and same size.')
         return x * np.sin(np.deg2rad(y)), x * np.cos(np.deg2rad(y))
     elif equation_type == 'norm':
-        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
-            raise ValueError('Norm equation: Inputs must have single component and same size.')
-        return np.sqrt(np.square(x) + np.square(y))
+        return np.sqrt(np.square(x) + np.square(y)),
     elif equation_type == 'direction':
-        if grid_in_time_components(x) != 1 or grid_in_time_components(y) != 1 or np.shape(x) != np.shape(y):
-            raise ValueError('Direction equation: Inputs must have single component and same size.')
-        return np.rad2deg(np.arctan2(y, x)) - 90  # TODO use oceanographic convention. This equation is wrong.
+        return np.rad2deg(np.arctan2(y, x)) - 90,  # TODO use oceanographic convention. This equation is wrong.
     else:
         raise ValueError('The given equation type is not supported.')
 
 
-def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) -> GRID_IN_TIME:
+def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) \
+                        -> tuple[SCALAR_GRID_IN_TIME, ...]:
     """
        Gathers grid data in time for a variable, dataset, time, and cut to coordinate limits.
 
@@ -513,7 +544,9 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
         x_data = get_interpreted_grid(dataset, x_variable, time, idx_limits)
         y_data = get_interpreted_grid(dataset, y_variable, time, idx_limits)
 
-        return compute_combo_equation(equation_type, x_data, y_data)
+        # Input first (and only) coordinate to equation computation. Due to recursion, x_data must have single
+        # component.
+        return compute_combo_equation(equation_type, x_data[0], y_data[0])
 
     else:
         year, month, day, hour = time
@@ -525,7 +558,7 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
                 variable_data = load(dataset, variable, year, month)[variable.key]
                 month_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
 
-            return np.concatenate(month_datas)
+            return np.concatenate(month_datas),
 
         elif year is None:
             year_datas = list()
@@ -534,7 +567,7 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
                 for month in get_months(dataset, year, variable):
                     variable_data = load(dataset, variable, year, month)[variable.key]
                     year_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
-            return np.concatenate(year_datas)
+            return np.concatenate(year_datas),
 
         elif month is None:
             month_datas = list()
@@ -542,11 +575,11 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
             for month in get_months(dataset, year, variable):
                 variable_data = load(dataset, variable, year, month)[variable.key]
                 month_datas.append(variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]])
-            return np.concatenate(month_datas)
+            return np.concatenate(month_datas),
 
         elif day is None:
             variable_data = load(dataset, variable, year, month)[variable.key]
-            return variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
+            return variable_data[:, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]],
 
         elif hour is None:
             hours = get_hours(dataset, variable, year, month, day)
@@ -555,7 +588,7 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
             end_time_index = get_time_index(dataset, variable, year, month, day, hours[-1])
 
             return variable_data[start_time_index:end_time_index + 1,
-                                 idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
+                                 idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]],
 
         else:
             variable_data = load(dataset, variable, year, month)[variable.key]
@@ -564,17 +597,13 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
 
             # Expand to 3D array
             data = np.expand_dims(data, axis=0)
-            return data
+            return data,
 
 
-def np_3d_to_grid_in_time(data: ArrayLike) -> GRID_IN_TIME:
-    grid_in_time = list()
-    for time_index in range
-
-
-def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> GridCollection:
+def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
+                         VectorCollection:
     """
-    Gathers grid data for a variable, dataset, time, and coordinate limits and returns it as a GridCollection.
+    Gathers grid data for a variable, dataset, time, and coordinate limits and returns it as a VectorCollection.
 
     If the given coordinate limits are None, data for all coordinates is returned.
 
@@ -585,7 +614,7 @@ def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits
         limits: The coordinate limits. Possibly None.
 
     Returns:
-        A GridCollection for the data.
+        A VectorCollection for the data.
     """
     idx_limits = get_coordinate_information(dataset, limits)
     interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits)
@@ -597,23 +626,21 @@ def get_grid_collection(dataset: Dataset, variable: Variable, time: TIME, limits
     latitude = data['lat'][idx_limits[0]:idx_limits[1]]
     longitude = data['lon'][idx_limits[2]:idx_limits[3]]
 
-    dimension = grid_in_time_components(interpreted_data)
+    # Re-shape interpreted data from tuple of SCALAR_GRID_IN_TIME to VECTOR_GRID_IN_TIME
+    interpreted_data = np.swapaxes(np.array(interpreted_data), 0, 1)
 
-    print(type(interpreted_data))
-    print(len(interpreted_data))
-
-    return GridCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
-                          longitude, dimension)
+    return VectorCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
+                            longitude)
 
 
 # ======================================================================================================================
 # CONVENIENCE FUNCTIONS
 # ======================================================================================================================
-def get_grid_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS]) -> \
-        GridCollection:
+def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS]) -> \
+                               VectorCollection:
     """
     Convenience function which converts a dataset and variable name, time, and limits to a grid collection via
-    conversion methods and the get_grid_collection_method.
+    conversion methods and the get_vector_collection_method.
 
     Args:
         dataset_name: The name of the dataset.
@@ -622,8 +649,8 @@ def get_grid_collection_names(dataset_name: str, variable_name: str, time: TIME,
         limits: The limits. Possibly None.
 
     Returns:
-        The grid collection.
+        The vector collection.
     """
     dataset = get_dataset_name(dataset_name)
     variable = get_variable_name(dataset, variable_name)
-    return get_grid_collection(dataset, variable, time, limits)
+    return get_vector_collection(dataset, variable, time, limits)
