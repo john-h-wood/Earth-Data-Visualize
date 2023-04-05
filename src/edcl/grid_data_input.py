@@ -600,6 +600,10 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
             return data,
 
 
+def re_shape_grids(data: tuple[SCALAR_GRID_IN_TIME, ...]) -> VECTOR_GRID_IN_TIME:
+    return np.swapaxes(np.array(data), 0, 1)
+
+
 def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
                          VectorCollection:
     """
@@ -627,7 +631,7 @@ def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limi
     longitude = data['lon'][idx_limits[2]:idx_limits[3]]
 
     # Re-shape interpreted data from tuple of SCALAR_GRID_IN_TIME to VECTOR_GRID_IN_TIME
-    interpreted_data = np.swapaxes(np.array(interpreted_data), 0, 1)
+    interpreted_data = re_shape_grids(interpreted_data)
 
     return VectorCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
                             longitude)
