@@ -12,11 +12,9 @@ from os.path import basename, isfile
 from typing import Optional
 from . import config as cfg
 from .formatting import format_month
-from .collections import VectorCollection
 from .info_classes import Dataset, Variable
-from .util import get_variable_identifier, get_variable_name, get_dataset_name
-from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, VECTOR_GRID_IN_TIME, SCALAR_GRID_IN_TIME, ArrayLike, \
-                   time_is_supported
+from .util import get_variable_identifier
+from .types import LIMITS, IDX_LIMITS, TIME, TIME_STAMPS, VECTOR_GRID_IN_TIME, SCALAR_GRID_IN_TIME, time_is_supported
 
 
 # ======================================================================================================================
