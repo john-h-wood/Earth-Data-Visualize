@@ -14,7 +14,8 @@ from .config import info
 from .types import PROJECTION, LIMITS
 from .formatting import tuple_to_string
 from .util import to_tuple, convertable_to_float, convertable_to_int
-from .collections import DataCollection, GridCollection, PathCollection, PointCollection
+from .collections import DataCollection, VectorCollection, PathCollection, PointCollection
+
 
 def plot_data_collections(data_collections: DataCollection | tuple[DataCollection, ...],
                           styles: str | tuple[str, ...], projection: PROJECTION, limits: Optional[LIMITS],
@@ -72,15 +73,18 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
         raise ValueError('The given plot output mode is not supported.')
     for data_collection, style in zip(data_collections, styles):
         validate_data_collection_style_pair(data_collection, style)
-    if any(data_collections[i] != data_collections[i + 1] for i in range(len(data_collections) - 1)):
+    if any(data_collections[i].get_time_length() != data_collections[i + 1].get_time_length() for i in range(len(
+           data_collections) - 1)):
         raise ValueError('The DataCollections to plot do not have the same time length.')
     if directory is not None and not osp.isdir(directory):
         raise NotADirectoryError(f'The directory {directory} was not found.')
     # TODO Validate format of path_names if its given
-    if titles is not None and len(titles) != len(data_collections):
-        raise ValueError('If they are given, there must be the same number of titles as data collections.')
-    if path_names is not None and len(path_names) != len(data_collections):
-        raise ValueError('If they are given, there must be the same number of path names as data collections')
+    if titles is not None and len(titles) != data_collections[0].get_time_length():
+        raise ValueError('There must be the same number of titles as the time length of the data '
+                         'collections. They may also be None')
+    if path_names is not None and len(path_names) != data_collections[0].get_time_length():
+        raise ValueError('There must be the same number of path names as the time length of the '
+                         'data collections. They may also be None.')
     if dpi is not None and dpi < 1:
         raise ValueError('Dpi must be greater than zero.')
 
@@ -107,8 +111,11 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
         gl.right_labels = False
         gl.bottom_labels = False
 
-        plt.title(titles[time_index] if titles is not None else generate_default_plot_title(data_collections, styles,
-                                                                                            time_index))
+        if titles is not None:
+            plt.title(titles[time_index])
+        else:
+            plt.title(generate_default_plot_title(data_collections, styles, time_index))
+
         # Plot the data
         for dc, style in zip(data_collections, styles):
             # Interpret null entries in style items
@@ -118,7 +125,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
                     style_items[i] = None
 
             # Heatmap. Check for instance of GridCollection is to satisfy type inspection. This is validated before
-            if style_items[0] == 'heat' and isinstance(dc, GridCollection):
+            if style_items[0] == 'heat' and isinstance(dc, VectorCollection):
                 # Extract ticks
                 if len(style_items) == 3:
                     ticks = None
@@ -129,24 +136,24 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
                 else:
                     vmin, vmax = ticks[0], ticks[-1]
 
-                p = ax.pcolormesh(dc.longitude, dc.latitude, dc.get_time_data(time_index),
+                p = ax.pcolormesh(dc.longitude, dc.latitude, dc.get_time_data(time_index)[0],
                                   transform=ccrs.PlateCarree(), cmap=style_items[1], shading='nearest', vmin=vmin,
                                   vmax=vmax)
                 fig.colorbar(p, orientation='vertical', ticks=ticks)
 
             # Contour plot
-            elif style_items[0] == 'contour' and isinstance(dc, GridCollection):
+            elif style_items[0] == 'contour' and isinstance(dc, VectorCollection):
                 if style_items[2] is not None:
                     levels = int(style_items[2])
                 else:
                     levels = None
 
-                cs = ax.contour(dc.longitude, dc.latitude, dc.get_time_data(time_index), transform=ccrs.PlateCarree(),
-                                colors=style_items[1], levels=levels)
+                cs = ax.contour(dc.longitude, dc.latitude, dc.get_time_data(time_index)[0],
+                                transform=ccrs.PlateCarree(), colors=style_items[1], levels=levels)
                 ax.clabel(cs, inline=True, fontsize=int(style_items[3]))
 
             # Quiver plot
-            elif style_items[0] == 'quiver' and isinstance(dc, GridCollection):
+            elif style_items[0] == 'quiver' and isinstance(dc, VectorCollection):
                 skip = int(style_items[2])
                 ax.quiver(dc.longitude[::skip], dc.latitude[::skip], dc.get_time_data(time_index)[0][::skip, ::skip],
                           dc.get_time_data(time_index)[1][::skip, ::skip], color=style_items[1],
@@ -162,17 +169,40 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
             elif style_items[0] == 'point' and isinstance(dc, PointCollection):
                 data = np.array(dc.get_time_data(time_index))
                 latitude = data[:, 0]
-                longitude=  data[:, 1]
+                longitude = data[:, 1]
                 ax.scatter(longitude, latitude, s=int(style_items[3]), c=style_items[2], marker=style_items[1],
                            transform=ccrs.PlateCarree())
 
+        # Output figure
+        plt.tight_layout()
+        path_name = None
+        if out_mode == 'save':
+            if path_names is None:
+                if directory is None:
+                    path_name = f'{time_index + 1}.png'
+                else:
+                    path_name = osp.join(directory, str(time_index + 1) + '.png')
+            else:
+                if directory is None:
+                    path_name = path_names[time_index]
+                else:
+                    path_name = osp.join(directory, path_names[time_index])
+        output_figure(out_mode, path_name)
 
 
+def output_figure(out_mode: str, path_name: Optional[str]) -> plt.Figure | None:
+    # Validate parameters
+    if out_mode == 'save' and path_name is None:
+        raise ValueError('A path must be given for the save mode.')
 
-
-
-
-
+    if out_mode == 'save':
+        plt.savefig(path_name)
+    elif out_mode == 'show':
+        plt.show()
+    elif out_mode == 'fig':
+        return plt.gcf()
+    else:
+        raise ValueError(f'Unknown out mode {out_mode}.')
 
 
 def validate_style(style: str) -> None:
@@ -292,10 +322,10 @@ def validate_data_collection_style_pair(data_collection: DataCollection, style: 
 
     style = style[:style.index('_')]
     if style == 'heat' or style == 'contour':
-        if not (isinstance(data_collection, GridCollection) and data_collection.dimension == 1):
+        if not (isinstance(data_collection, VectorCollection) and data_collection.get_dimension() == 1):
             raise ValueError('Heat and contour styles are only valid for one-dimensional GridCollections.')
     elif style == 'quiver':
-        if not (isinstance(data_collection, GridCollection) and data_collection.dimension == 2):
+        if not (isinstance(data_collection, VectorCollection) and data_collection.get_dimension() == 2):
             raise ValueError('Quiver style is only valid for two-dimensional GridCollections.')
     elif style == 'patch':
         if not isinstance(data_collection, PathCollection):

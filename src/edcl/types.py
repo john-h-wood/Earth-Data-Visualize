@@ -36,7 +36,11 @@ PATH = Path
 
 # Were more specific typing available, this would be a four-dimensional np array of floats. The first axis is time,
 # along which we have a series of VECTOR_GRIDs, each with specific to a moment in time.
-VECTOR_IN_TIME = ArrayLike
+VECTOR_GRID_IN_TIME = ArrayLike
+
+# Were more specific typing available, this would be a three-dimensional np array of floats. The first axis is time.
+# The second and third locate the scalar on a latitude/longitude grid. This is the type for np arrays loaded from data.
+SCALAR_GRID_IN_TIME = ArrayLike
 
 # A tuple of POINTs, each associated with a specific time
 POINT_IN_TIME = tuple[tuple[float, float], ...]
@@ -48,7 +52,7 @@ PATH_IN_TIME = tuple[Path, ...]
 DATA = VECTOR_GRID | POINT | PATH
 
 # A tuple of DATAs, all of the same type, each associated with a specific time
-DATA_IN_TIME = VECTOR_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
+DATA_IN_TIME = VECTOR_GRID_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
 
 # Matrix of coordinates (latitude or longitude)
 COORDINATES = ArrayLike
