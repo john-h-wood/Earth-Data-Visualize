@@ -511,14 +511,15 @@ def compute_combo_equation(equation_type: str, x: SCALAR_GRID_IN_TIME, y: SCALAR
         raise ValueError('The given equation type is not supported.')
 
 
-def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS) \
-                        -> tuple[SCALAR_GRID_IN_TIME, ...]:
+def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_limits: IDX_LIMITS,
+                         time_index: Optional[int]) -> tuple[SCALAR_GRID_IN_TIME, ...]:
     """
        Gathers grid data in time for a variable, dataset, time, and cut to coordinate limits.
 
        Performs any calculations coming from combo variables.
        This function is separate from others, including get_data, because it uses recursion for combo_variable
-       computation.
+       computation. If the time has not None elements, the time index of the data within the month may be specified.
+       Otherwise, it will be calculated.
 
 
        Args:
@@ -526,23 +527,27 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
            variable: The variable.
            time: The time.
            idx_limits: The coordinate limit indices.
+           time_index: The time index. Possibly None.
 
        Returns:
            The cut and interpreted data.
 
         Raises:
             ValueError: The given time type is not supported.
+            ValueError: The time index may only be specified if the time does not have a None element.
        """
     # Validate parameters
     if not time_is_supported(time):
         raise ValueError('The given time type is not supported.')
+    if any(time[i] is None for i in range(4)) and time_index is not None:
+        raise ValueError('The time index may only be specified if the time does not have a None element.')
 
     if variable.is_combo:
         equation_type, x_identifier, y_identifier = variable.equation.split('_')
         x_variable = get_variable_identifier(dataset, int(x_identifier))
         y_variable = get_variable_identifier(dataset, int(y_identifier))
-        x_data = get_interpreted_grid(dataset, x_variable, time, idx_limits)
-        y_data = get_interpreted_grid(dataset, y_variable, time, idx_limits)
+        x_data = get_interpreted_grid(dataset, x_variable, time, idx_limits, time_index)
+        y_data = get_interpreted_grid(dataset, y_variable, time, idx_limits, time_index)
 
         # Input first (and only) coordinate to equation computation. Due to recursion, x_data must have single
         # component.
@@ -592,7 +597,8 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
 
         else:
             variable_data = load(dataset, variable, year, month)[variable.key]
-            time_index = get_time_index(dataset, variable, year, month, day, hour)
+            if time_index is None:
+                time_index = get_time_index(dataset, variable, year, month, day, hour)
             data = variable_data[time_index, idx_limits[0]:idx_limits[1], idx_limits[2]:idx_limits[3]]
 
             # Expand to 3D array
