@@ -10,7 +10,7 @@ from .types import *
 from . import maximal_limits
 from .formatting import time_to_suffix
 from .info_classes import Dataset, Variable
-from .grid_data_input import get_interpreted_grid, re_shape_grids
+from .grid_data_input import get_interpreted_grid, re_shape_grids, get_years, get_months
 
 
 class DataCollection(ABC):
@@ -126,6 +126,27 @@ class VirtualVectorCollection(DataCollection):
 
         return re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits,
                                                    idx_within_month))
+
+    def get_all_data(self):
+        year, month, day, hour = self.time
+        if (month is not None) and year is None:
+            years = [x for x in get_years(self.dataset, None) if month in get_months(self.dataset, x, self.variable)]
+            for year in years:
+                yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
+                                                          self.idx_limits, None))
+        elif year is None:
+            for year in get_years(self.dataset, self.variable):
+                for month in get_months(self.dataset, year, self.variable):
+                    yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
+                                                              self.idx_limits, None))
+
+        elif month is None:
+            for month in get_months(self.dataset, year, self.variable):
+                yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
+                                                          self.idx_limits, None))
+
+        else:
+            yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, self.time, self.idx_limits, None))
 
     def get_limits(self) -> LIMITS:
         """

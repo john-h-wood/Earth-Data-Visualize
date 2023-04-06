@@ -516,7 +516,7 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
 
        Performs any calculations coming from combo variables.
        This function is separate from others, including get_data, because it uses recursion for combo_variable
-       computation. If the time has not None elements, the time index of the data within the month may be specified.
+       computation. If the time has no None elements, the time index of the data within the month may be specified.
        Otherwise, it will be calculated.
 
 
@@ -537,7 +537,7 @@ def get_interpreted_grid(dataset: Dataset, variable: Variable, time: TIME, idx_l
     # Validate parameters
     if not time_is_supported(time):
         raise ValueError('The given time type is not supported.')
-    if any(time[i] is None for i in range(4)) and time_index is not None:
+    if time_index is not None and any(time[i] is None for i in range(4)):
         raise ValueError('The time index may only be specified if the time does not have a None element.')
 
     if variable.is_combo:

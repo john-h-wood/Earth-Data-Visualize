@@ -7,7 +7,7 @@ from .types import LIMITS, TIME, TIME_STAMPS
 from .info_classes import Dataset, Variable
 from .grid_data_input import get_coordinate_information, get_time_stamps, get_interpreted_grid, re_shape_grids, load
 from .util import get_dataset_name, get_variable_name
-from .collections import VectorCollection
+from .collections import VectorCollection, VirtualVectorCollection
 
 
 def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
@@ -27,7 +27,7 @@ def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limi
         A VectorCollection for the data.
     """
     idx_limits = get_coordinate_information(dataset, limits)
-    interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits)
+    interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits, None)
     title_prefix = f'{dataset.name}: {variable.name} '
     time_stamps = get_time_stamps(dataset, variable, time)
 
@@ -41,6 +41,29 @@ def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limi
 
     return VectorCollection(dataset, variable, time, time_stamps, title_prefix, '', interpreted_data, latitude,
                             longitude)
+
+
+def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
+                                 VirtualVectorCollection:
+    idx_limits = get_coordinate_information(dataset, limits)
+    title_prefix = f'{dataset.name}: {variable.name} '
+    time_stamps = get_time_stamps(dataset, variable, time)
+
+    # Get latitude and longitude information, which is only dataset-specific
+    data = load(dataset, None, None, None)
+    latitude = data['lat'][idx_limits[0]:idx_limits[1]]
+    longitude = data['lon'][idx_limits[2]:idx_limits[3]]
+
+    # Get dimension information
+    dimension = 1 if variable.kind == 'scalar' else 2
+
+    return VirtualVectorCollection(dataset, variable, time, time_stamps, title_prefix, '', dimension, latitude,
+                                   longitude, idx_limits)
+
+
+
+
+
 
 
 # ======================================================================================================================
