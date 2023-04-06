@@ -68,6 +68,10 @@ class DataCollection(ABC):
     def get_limits(self) -> LIMITS:
         ...
 
+    @abstractmethod
+    def get_dimension(self) -> int:
+        ...
+
 
 class VectorCollection(DataCollection):
     """
@@ -98,7 +102,7 @@ class VectorCollection(DataCollection):
         return np.min(self.latitude), np.max(self.latitude), np.min(self.longitude), np.max(self.longitude)
 
     def get_dimension(self) -> int:
-        return np.shape(self.data_in_time)[1]
+        return self.variable.dimension
 
 
 class VirtualVectorCollection(DataCollection):
@@ -108,10 +112,8 @@ class VirtualVectorCollection(DataCollection):
     permanently stored, but accessed as requested.
     """
     def __init__(self, dataset: Dataset, variable: Variable, time: TIME, time_stamps: TIME_STAMPS, title_prefix: str,
-                 title_suffix: str, dimension: int, latitude: COORDINATES, longitude: COORDINATES,
-                 idx_limits: IDX_LIMITS):
+                 title_suffix: str, latitude: COORDINATES, longitude: COORDINATES, idx_limits: IDX_LIMITS):
         super().__init__(dataset, variable, time, time_stamps, title_prefix, title_suffix)
-        self.dimension = dimension
         self.latitude = latitude
         self.longitude = longitude
         self.idx_limits = idx_limits
@@ -157,8 +159,8 @@ class VirtualVectorCollection(DataCollection):
         """
         return np.min(self.latitude), np.max(self.latitude), np.min(self.longitude), np.max(self.longitude)
 
-    def get_dimension(self) -> int: # TODO should get_dimension be abstract method for all DataCollections?
-        return self.dimension
+    def get_dimension(self) -> int:
+        return self.variable.dimension
 
 
 class PointCollection(DataCollection):
@@ -186,6 +188,9 @@ class PointCollection(DataCollection):
         """
         latitudes, longitudes = np.transpose(np.array(self.data_in_time))
         return np.min(latitudes), np.max(latitudes), np.min(longitudes), np.max(longitudes)
+
+    def get_dimension(self) -> int:
+        return 2
 
 
 class PathCollection(DataCollection):
@@ -217,4 +222,7 @@ class PathCollection(DataCollection):
             limits.append((ex.ymin, ex.ymax, ex.xmin, ex.xmax))
 
         return maximal_limits(tuple(limits))
+
+    def get_dimension(self) -> int:
+        return 2
 

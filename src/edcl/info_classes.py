@@ -11,7 +11,7 @@ class Variable:
     Class representing a variable and its metadata, including type, name, etc.
     """
 
-    def __init__(self, name: str, kind: str, is_combo: bool, identifier: int, key: Optional[str],
+    def __init__(self, name: str, dimension: int, is_combo: bool, identifier: int, key: Optional[str],
                  equation: Optional[str], file_identifier: Optional[str]) -> None:
         """
         Constructor method.
@@ -27,7 +27,7 @@ class Variable:
             file_identifier: Substring use to denote the variable in path of a MATLAB file.
         """
         self.name = name
-        self.kind = kind
+        self.dimension = dimension
         self.is_combo = is_combo
         self.identifier = identifier
         self.key = key
@@ -44,6 +44,8 @@ class Variable:
             if key is None: raise ValueError('The key for a non-combo variable should not be None.')
             if equation is not None: raise ValueError('The equation for a non-combo variable should be None.')
             # Must validate nullity of file_identifier for non combo variables since this depends on is_unified
+        if dimension <= 0:
+            raise ValueError('The dimension for a variable must be an integer greater than or equal to zero.')
 
     def __str__(self) -> str:
         return self.name
