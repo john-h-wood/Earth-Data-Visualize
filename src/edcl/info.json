@@ -27,7 +27,7 @@
             "variables": [
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "ws_ts",
@@ -36,7 +36,7 @@
                 },
                 {
                     "name": "Wind dir (deg)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "wd_ts",
@@ -45,7 +45,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 2,
                     "key": null,
@@ -63,7 +63,7 @@
             "variables": [
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "ws_ts",
@@ -72,7 +72,7 @@
                 },
                 {
                     "name": "Wind dir (deg)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "wd_ts",
@@ -81,7 +81,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 2,
                     "key": null,
@@ -99,7 +99,7 @@
             "variables": [
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "ws_ts",
@@ -108,7 +108,7 @@
                 },
                 {
                     "name": "Wind dir (deg)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "wd_ts",
@@ -117,7 +117,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 2,
                     "key": null,
@@ -135,7 +135,7 @@
             "variables": [
                 {
                     "name": "Wind 10m u",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "u10m_ts",
@@ -144,7 +144,7 @@
                 },
                 {
                     "name": "Wind 10m v",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "v10m_ts",
@@ -153,7 +153,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 2,
                     "key": null,
@@ -162,7 +162,7 @@
                 },
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 3,
                     "key": "ws_ts",
@@ -180,7 +180,7 @@
             "variables": [
                 {
                     "name": "Wind 10m u",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "u10m_ts",
@@ -189,7 +189,7 @@
                 },
                 {
                     "name": "Wind 10m v",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "v10m_ts",
@@ -198,7 +198,7 @@
                 },
                 {
                     "name": "Temp 2m",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 2,
                     "key": "t2m_ts",
@@ -207,7 +207,7 @@
                 },
                 {
                     "name": "SLP (mB)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 3,
                     "key": "slp_ts",
@@ -216,7 +216,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 4,
                     "key": null,
@@ -225,7 +225,7 @@
                 },
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 5,
                     "key": "ws_ts",
@@ -243,7 +243,7 @@
             "variables": [
                 {
                     "name": "Wind 10m u",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 0,
                     "key": "u10m_ts",
@@ -252,7 +252,7 @@
                 },
                 {
                     "name": "Wind 10m v",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 1,
                     "key": "v10m_ts",
@@ -261,7 +261,7 @@
                 },
                 {
                     "name": "Temp 2m",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 2,
                     "key": "t2m_ts",
@@ -270,7 +270,7 @@
                 },
                 {
                     "name": "SLP (mB)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 3,
                     "key": "slp_ts",
@@ -279,7 +279,7 @@
                 },
                 {
                     "name": "Wind",
-                    "kind": "vector",
+                    "dimension": 2,
                     "is_combo": true,
                     "identifier": 4,
                     "key": null,
@@ -288,7 +288,7 @@
                 },
                 {
                     "name": "Wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 5,
                     "key": "ws_ts",
@@ -297,7 +297,7 @@
                 },
                 {
                     "name": "Sorted wind spd (m/s)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": -5,
                     "key": "sws_ts",
@@ -306,7 +306,7 @@
                 },
                 {
                     "name": "Wind dir (deg)",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": true,
                     "identifier": 6,
                     "key": null,
@@ -315,7 +315,7 @@
                 },
                 {
                     "name": "Frac below",
-                    "kind": "scalar",
+                    "dimension": 1,
                     "is_combo": false,
                     "identifier": 7,
                     "key": "fb_ts",
