@@ -92,6 +92,9 @@ class VectorCollection(DataCollection):
     def get_time_data(self, time_index: int) -> VECTOR_GRID:
         return self.data_in_time[time_index]
 
+    def get_all_data(self) -> VECTOR_GRID_IN_TIME:
+        return self.data_in_time
+
     def get_limits(self) -> LIMITS:
         """
         The spatial limits of the data. These are the maximal limits over time.
@@ -103,6 +106,7 @@ class VectorCollection(DataCollection):
 
     def get_dimension(self) -> int:
         return self.variable.dimension
+
 
 
 class VirtualVectorCollection(DataCollection):
@@ -125,7 +129,7 @@ class VirtualVectorCollection(DataCollection):
         # Return 0-th index of re-shaped and interpreted data, since this data is in time
         return re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits))[0]
 
-    def get_all_data(self):
+    def get_all_data_iter(self):
         year, month, day, hour = self.time
         if (month is not None) and year is None:
             years = [x for x in get_years(self.dataset, None) if month in get_months(self.dataset, x, self.variable)]
