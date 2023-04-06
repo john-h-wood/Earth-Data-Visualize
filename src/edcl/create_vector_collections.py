@@ -3,7 +3,7 @@ The create_vector_collections module houses all functions which create VectorCol
 """
 from typing import Optional
 
-from .types import LIMITS, TIME, TIME_STAMPS
+from .types import LIMITS, TIME
 from .info_classes import Dataset, Variable
 from .grid_data_input import get_coordinate_information, get_time_stamps, get_interpreted_grid, re_shape_grids, load
 from .util import get_dataset_name, get_variable_name
@@ -27,7 +27,7 @@ def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limi
         A VectorCollection for the data.
     """
     idx_limits = get_coordinate_information(dataset, limits)
-    interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits, None)
+    interpreted_data = get_interpreted_grid(dataset, variable, time, idx_limits)
     title_prefix = f'{dataset.name}: {variable.name} '
     time_stamps = get_time_stamps(dataset, variable, time)
 
@@ -54,16 +54,8 @@ def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TI
     latitude = data['lat'][idx_limits[0]:idx_limits[1]]
     longitude = data['lon'][idx_limits[2]:idx_limits[3]]
 
-    # Get dimension information
-    dimension = 1 if variable.kind == 'scalar' else 2
-
-    return VirtualVectorCollection(dataset, variable, time, time_stamps, title_prefix, '', dimension, latitude,
-                                   longitude, idx_limits)
-
-
-
-
-
+    return VirtualVectorCollection(dataset, variable, time, time_stamps, title_prefix, '', latitude, longitude,
+                                   idx_limits)
 
 
 # ======================================================================================================================
@@ -72,7 +64,7 @@ def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TI
 def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS]) -> \
                                VectorCollection:
     """
-    Convenience function which converts a dataset and variable name, time, and limits to a grid collection via
+    Convenience function which converts a dataset and variable name, time, and limits to a loaded vector collection via
     conversion methods and the get_vector_collection_method.
 
     Args:
@@ -87,3 +79,23 @@ def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIM
     dataset = get_dataset_name(dataset_name)
     variable = get_variable_name(dataset, variable_name)
     return get_vector_collection(dataset, variable, time, limits)
+
+
+def get_virtual_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS])\
+                                        -> VirtualVectorCollection:
+    """
+    Convenience function which converts a dataset and variable name, time, and limits to a virtual vector collection via
+    conversion methods and the get_vector_collection_method.
+
+    Args:
+        dataset_name: The name of the dataset.
+        variable_name: The name of the variable.
+        time: The time.
+        limits: The limits. Possibly None.
+
+    Returns:
+        The virtual vector collection.
+    """
+    dataset = get_dataset_name(dataset_name)
+    variable = get_variable_name(dataset, variable_name)
+    return get_virtual_vector_collection(dataset, variable, time, limits)

@@ -14,7 +14,7 @@ from .config import info
 from .types import PROJECTION, LIMITS
 from .formatting import tuple_to_string
 from .util import to_tuple, convertable_to_float, convertable_to_int
-from .collections import DataCollection, VectorCollection, PathCollection, PointCollection
+from .collections import DataCollection, VectorCollection, VirtualVectorCollection, PathCollection, PointCollection
 
 
 def plot_data_collections(data_collections: DataCollection | tuple[DataCollection, ...],
@@ -125,7 +125,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
                     style_items[i] = None
 
             # Heatmap. Check for instance of GridCollection is to satisfy type inspection. This is validated before
-            if style_items[0] == 'heat' and isinstance(dc, VectorCollection):
+            if style_items[0] == 'heat' and isinstance(dc, VectorCollection | VirtualVectorCollection):
                 # Extract ticks
                 if len(style_items) == 3:
                     ticks = None
@@ -142,7 +142,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
                 fig.colorbar(p, orientation='vertical', ticks=ticks)
 
             # Contour plot
-            elif style_items[0] == 'contour' and isinstance(dc, VectorCollection):
+            elif style_items[0] == 'contour' and isinstance(dc, VectorCollection | VirtualVectorCollection):
                 if style_items[2] is not None:
                     levels = int(style_items[2])
                 else:
@@ -153,7 +153,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
                 ax.clabel(cs, inline=True, fontsize=int(style_items[3]))
 
             # Quiver plot
-            elif style_items[0] == 'quiver' and isinstance(dc, VectorCollection):
+            elif style_items[0] == 'quiver' and isinstance(dc, VectorCollection | VirtualVectorCollection):
                 skip = int(style_items[2])
                 ax.quiver(dc.longitude[::skip], dc.latitude[::skip], dc.get_time_data(time_index)[0][::skip, ::skip],
                           dc.get_time_data(time_index)[1][::skip, ::skip], color=style_items[1],
@@ -311,8 +311,8 @@ def validate_data_collection_style_pair(data_collection: DataCollection, style: 
         None.
 
     Raises:
-        ValueError: Heat and contour style is only valid for one-dimensional GridCollections.
-        ValueError: Quiver style is only valid for two-dimensional GridCollections.
+        ValueError: Heat and contour style is only valid for one-dimensional Vector/VirtualVectorCollections.
+        ValueError: Quiver style is only valid for two-dimensional Vector/VirtualVectorCollections.
         ValueError: Path style is only valid for PathCollections.
         ValueError: Point style is only valid for PointCollections.
         ValueError: The style family is not supported.
@@ -322,11 +322,14 @@ def validate_data_collection_style_pair(data_collection: DataCollection, style: 
 
     style = style[:style.index('_')]
     if style == 'heat' or style == 'contour':
-        if not (isinstance(data_collection, VectorCollection) and data_collection.get_dimension() == 1):
-            raise ValueError('Heat and contour styles are only valid for one-dimensional GridCollections.')
+        if not (isinstance(data_collection, VectorCollection | VirtualVectorCollection) and
+                data_collection.get_dimension() == 1):
+            raise ValueError('Heat and contour styles are only valid for one-dimensional '
+                             'Vector/VirtualVectorCollections.')
     elif style == 'quiver':
-        if not (isinstance(data_collection, VectorCollection) and data_collection.get_dimension() == 2):
-            raise ValueError('Quiver style is only valid for two-dimensional GridCollections.')
+        if not (isinstance(data_collection, VectorCollection | VirtualVectorCollection) and
+                data_collection.get_dimension() == 2):
+            raise ValueError('Quiver style is only valid for two-dimensional Vector/VirtualVectorCollections.')
     elif style == 'patch':
         if not isinstance(data_collection, PathCollection):
             raise ValueError('Path style is only valid for PathCollections.')

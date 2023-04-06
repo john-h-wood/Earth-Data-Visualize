@@ -119,15 +119,11 @@ class VirtualVectorCollection(DataCollection):
         self.idx_limits = idx_limits
 
     def get_time_data(self, time_index: int) -> VECTOR_GRID:
-        # Identify time, and time index within month
+        # Identify time
         time = self.time_stamps[time_index]
-        first_idx = time_index
-        while first_idx - 1 >= 0 and self.time_stamps[first_idx - 1][1] == time[1]:
-            first_idx -= 1
-        idx_within_month = time_index - first_idx
 
-        return re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits,
-                                                   idx_within_month))
+        # Return 0-th index of re-shaped and interpreted data, since this data is in time
+        return re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits))[0]
 
     def get_all_data(self):
         year, month, day, hour = self.time
@@ -135,20 +131,20 @@ class VirtualVectorCollection(DataCollection):
             years = [x for x in get_years(self.dataset, None) if month in get_months(self.dataset, x, self.variable)]
             for year in years:
                 yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                          self.idx_limits, None))
+                                                          self.idx_limits))
         elif year is None:
             for year in get_years(self.dataset, self.variable):
                 for month in get_months(self.dataset, year, self.variable):
                     yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                              self.idx_limits, None))
+                                                              self.idx_limits))
 
         elif month is None:
             for month in get_months(self.dataset, year, self.variable):
                 yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                          self.idx_limits, None))
+                                                          self.idx_limits))
 
         else:
-            yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, self.time, self.idx_limits, None))
+            yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, self.time, self.idx_limits))
 
     def get_limits(self) -> LIMITS:
         """
