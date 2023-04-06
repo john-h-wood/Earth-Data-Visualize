@@ -161,7 +161,7 @@ def get_years(dataset: Dataset, variable: Optional[Variable]) -> list[int]:
         x_years = get_years(dataset, x_variable)
         y_years = get_years(dataset, y_variable)
 
-        return np.union1d(x_years, y_years).tolist()
+        return np.intersect1d(x_years, y_years).tolist()
 
     years = list()
 
@@ -202,7 +202,7 @@ def get_months(dataset: Dataset, year: int, variable: Optional[Variable]) -> lis
         x_months = get_months(dataset, year, x_variable)
         y_months = get_months(dataset, year, y_variable)
 
-        return np.union1d(x_months, y_months).tolist()
+        return np.intersect1d(x_months, y_months).tolist()
 
     checked_months = list()
     valid_months = list()
@@ -264,7 +264,7 @@ def get_days(dataset: Dataset, variable: Optional[Variable], year: int, month: i
         x_days = get_days(dataset, x_variable, year, month)
         y_days = get_days(dataset, y_variable, year, month)
 
-        return np.union1d(x_days, y_days).tolist()
+        return np.intersect1d(x_days, y_days).tolist()
 
     data = load(dataset, variable, year, month)
     # noinspection PyTypeChecker
@@ -305,7 +305,7 @@ def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: 
         x_hours = get_hours(dataset, x_variable, year, month, day)
         y_hours = get_hours(dataset, y_variable, year, month, day)
 
-        return np.union1d(x_hours, y_hours).tolist()
+        return np.intersect1d(x_hours, y_hours).tolist()
 
     data = load(dataset, variable, year, month)
     days = data['day_ts']
@@ -318,6 +318,31 @@ def get_hours(dataset: Dataset, variable: Variable, year: int, month: int, day: 
     hour_inds = np.asarray(days == day).nonzero()[0]
 
     return hours[hour_inds[0]:hour_inds[-1] + 1].tolist()
+
+
+def get_month_time_stamps(dataset: Dataset, variable: Variable, year: int, month: int) -> TIME_STAMPS:
+    # Assumes data is available for the variable or its constituent variables if its a combo variable in the
+    #  specific year and month
+    time_stamps = list()
+
+    if variable.is_combo:
+        equation_type, x_identifier, y_identifier = variable.equation.split('_')
+        x_variable = get_variable_identifier(dataset, int(x_identifier))
+        y_variable = get_variable_identifier(dataset, int(y_identifier))
+        x_stamps = get_month_time_stamps(dataset, x_variable, year, month)
+        y_stamps = get_month_time_stamps(dataset, y_variable, year, month)
+
+        # Return intersection of x and y stamps. Only need to look at day and hour since year and month are the same
+        for x_stamp in x_stamps:
+            if x_stamp in y_stamps:
+                time_stamps.append(x_stamp)
+
+    else:
+
+        month_data = load(dataset, variable, year, month)
+        for i in range(len(month_data['hour_ts'])):
+            time_stamps.append((year, month, month_data['day_ts'][i], month_data['hour_ts'][i]))
+    return tuple(time_stamps)
 
 
 def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME) -> TIME_STAMPS:
@@ -342,24 +367,16 @@ def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME) -> TIME_ST
     if (range_month is not None) and (range_year is None):
         years = [x for x in get_years(dataset, None) if range_month in get_months(dataset, x, variable)]
         for year in years:
-            for day in get_days(dataset, variable, year, range_month):
-                for hour in get_hours(dataset, variable, year, range_month, day):
-                    time_stamps.append((year, range_month, day, hour))
+            time_stamps.extend(get_month_time_stamps(dataset, variable, year, range_month))
     elif range_year is None:
         for year in get_years(dataset, variable):
             for month in get_months(dataset, year, variable):
-                for day in get_days(dataset, variable, year, month):
-                    for hour in get_hours(dataset, variable, year, month, day):
-                        time_stamps.append((year, month, day, hour))
+                time_stamps.extend(get_month_time_stamps(dataset, variable, year, month))
     elif range_month is None:
         for month in get_months(dataset, range_year, variable):
-            for day in get_days(dataset, variable, range_year, month):
-                for hour in get_hours(dataset, variable, range_year, month, day):
-                    time_stamps.append((range_year, month, day, hour))
+            time_stamps.extend(get_month_time_stamps(dataset, variable, range_year, month))
     elif range_day is None:
-        for day in get_days(dataset, variable, range_year, range_month):
-            for hour in get_hours(dataset, variable, range_year, range_month, day):
-                time_stamps.append((range_year, range_month, day, hour))
+        time_stamps.extend(get_month_time_stamps(dataset, variable, range_year, range_month))
     elif range_hour is None:
         for hour in get_hours(dataset, variable, range_year, range_month, range_day):
             time_stamps.append((range_year, range_month, range_day, hour))

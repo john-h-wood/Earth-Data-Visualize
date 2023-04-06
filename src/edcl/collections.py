@@ -108,7 +108,6 @@ class VectorCollection(DataCollection):
         return self.variable.dimension
 
 
-
 class VirtualVectorCollection(DataCollection):
     """
     Class storing all information for Earth vector (or scalar) data, including its dataset, variable, time,
