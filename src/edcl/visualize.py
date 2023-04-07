@@ -12,7 +12,7 @@ from matplotlib.markers import MarkerStyle
 
 from .config import info
 from .types import PROJECTION, LIMITS
-from .formatting import tuple_to_string
+from .formatting import tuple_to_string_linebreak
 from .util import to_tuple, convertable_to_float, convertable_to_int
 from .collections import DataCollection, VectorCollection, VirtualVectorCollection, PathCollection, PointCollection
 
@@ -167,9 +167,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
 
             # Point
             elif style_items[0] == 'point' and isinstance(dc, PointCollection):
-                data = np.array(dc.get_time_data(time_index))
-                latitude = data[:, 0]
-                longitude = data[:, 1]
+                latitude, longitude = dc.get_time_data(time_index)
                 ax.scatter(longitude, latitude, s=int(style_items[3]), c=style_items[2], marker=style_items[1],
                            transform=ccrs.PlateCarree())
 
@@ -372,4 +370,4 @@ def generate_default_plot_title(data_collections: tuple[DataCollection], styles:
 
         sub_titles.append(working_title)
 
-    return tuple_to_string(tuple(sub_titles))
+    return tuple_to_string_linebreak(tuple(sub_titles))

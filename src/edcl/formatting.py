@@ -59,6 +59,37 @@ def tuple_to_string(values: tuple) -> str:
         return word
 
 
+def tuple_to_string_linebreak(values: tuple) -> str:
+    """
+    Returns a formatted string representation of a tuple of elements.
+
+    Formats the elements in English form, with the Oxford comma. If the tuple is empty, 'No value' is returned. If
+    the tuple contains a single element, that element is returned as a string.
+
+    Examples:
+        ('A', 'B', 'C') -> 'A, B and C'
+        (1) -> '1'
+        () -> 'No value'
+
+    Args:
+        values: The values.
+
+    Returns:
+        The string representation.
+    """
+
+    if len(values) == 0:
+        return 'No value'
+    elif len(values) == 1:
+        return str(values[0])
+    else:
+        word = str()
+        for i in range(len(values) - 1):
+            word += str(values[i]) + ',\n'
+        word += 'and ' + str(values[-1])
+        return word
+
+
 def format_month(month: int) -> str:
     """
     Formats a month number as a two-character-long string.
