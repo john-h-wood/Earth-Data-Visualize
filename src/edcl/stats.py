@@ -41,53 +41,94 @@ def time_average_vector_collection(vc: VectorCollection | VirtualVectorCollectio
 # ======================================================================================================================
 # ARG EXTREMUM (Position of the maximum / minimum)
 # ======================================================================================================================
-def arg_extremum_in_space_grid_in_time(vc: VectorCollection | VirtualVectorCollection,
-                                       grid_in_time: VECTOR_GRID_IN_TIME, ignore_nan: bool, multiplier: int) -> \
-                                      tuple[POINT]:
-    arg_extrema = list()
-    if ignore_nan:
-        for grid in grid_in_time:
-            # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
-            lat_idx, lon_idx = np.unravel_index(np.nanargmax(multiplier * grid[0]), np.shape(grid[0]))
-            arg_extrema.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
-    else:
-        for grid in grid_in_time:
-            # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
-            lat_idx, lon_idx = np.unravel_index(np.argmax(multiplier * grid[0]), np.shape(grid[0]))
-            arg_extrema.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
-    return tuple(arg_extrema)
-
-
-def arg_extremum_in_space_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool,
-                                            multiplier: int, title: str) -> PointCollection:
+def arg_max_in_space_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                       ignore_nan: bool = True) -> PointCollection:
     # Validate parameters
     if vc.get_dimension() != 1:
         raise ValueError('Extremum computation is only allowed for one-dimensional (scalar) vector collections.')
 
+    arg_max = list()
     if isinstance(vc, VectorCollection):
-        arg_extrema = arg_extremum_in_space_grid_in_time(vc, vc.get_all_data(), ignore_nan, multiplier)
+        if ignore_nan:
+            for grid in vc.get_all_data():
+                # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
+                lat_idx, lon_idx = np.unravel_index(np.nanargmax(grid[0]), np.shape(grid[0]))
+                arg_max.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+        else:
+            for grid in vc.get_all_data():
+                lat_idx, lon_idx = np.unravel_index(np.argmax(grid[0]), np.shape(grid[0]))
+                arg_max.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+
     else:
-        arg_extrema = list()
         for grid_in_time in vc.get_all_data_iter():
-            arg_extrema.extend(arg_extremum_in_space_grid_in_time(vc, grid_in_time, ignore_nan, multiplier))
-        arg_extrema = tuple(arg_extrema)
+            if ignore_nan:
+                for grid in grid_in_time:
+                    # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
+                    lat_idx, lon_idx = np.unravel_index(np.nanargmax(grid[0]), np.shape(grid[0]))
+                    arg_max.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+            else:
+                for grid in grid_in_time:
+                    lat_idx, lon_idx = np.unravel_index(np.argmax(grid[0]), np.shape(grid[0]))
+                    arg_max.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+
+    arg_max = tuple(arg_max)
 
     if ignore_nan:
-        title_prefix = f'Timed Ignore Nan-{title} Loc. of ' + vc.title_prefix
+        title_prefix = f'Timed Ignore-Nan Max Loc. of ' + vc.title_prefix
     else:
-        title_prefix = f'Timed {title} Loc. of ' + vc.title_prefix
+        title_prefix = f'Timed Max Loc. of ' + vc.title_prefix
 
-    return PointCollection(vc.dataset, vc.variable, vc.time, vc.time_stamps, title_prefix, '', arg_extrema)
+    return PointCollection(vc.dataset, vc.variable, vc.time, vc.time_stamps, title_prefix, '', arg_max)
 
 
-def arg_extremum_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool,
-                                                 multiplier: int, title: str) -> PointCollection:
+def arg_min_in_space_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                       ignore_nan: bool = True) -> PointCollection:
+    # Validate parameters
+    if vc.get_dimension() != 1:
+        raise ValueError('Extremum computation is only allowed for one-dimensional (scalar) vector collections.')
+
+    arg_min = list()
+    if isinstance(vc, VectorCollection):
+        if ignore_nan:
+            for grid in vc.get_all_data():
+                # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
+                lat_idx, lon_idx = np.unravel_index(np.nanargmin(grid[0]), np.shape(grid[0]))
+                arg_min.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+        else:
+            for grid in vc.get_all_data():
+                lat_idx, lon_idx = np.unravel_index(np.argmin(grid[0]), np.shape(grid[0]))
+                arg_min.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+
+    else:
+        for grid_in_time in vc.get_all_data_iter():
+            if ignore_nan:
+                for grid in grid_in_time:
+                    # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
+                    lat_idx, lon_idx = np.unravel_index(np.nanargmin(grid[0]), np.shape(grid[0]))
+                    arg_min.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+            else:
+                for grid in grid_in_time:
+                    lat_idx, lon_idx = np.unravel_index(np.argmin(grid[0]), np.shape(grid[0]))
+                    arg_min.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
+
+    arg_min = tuple(arg_min)
+
+    if ignore_nan:
+        title_prefix = f'Timed Ignore-Nan Min Loc. of ' + vc.title_prefix
+    else:
+        title_prefix = f'Timed Min Loc. of ' + vc.title_prefix
+
+    return PointCollection(vc.dataset, vc.variable, vc.time, vc.time_stamps, title_prefix, '', arg_min)
+
+
+def arg_max_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                            ignore_nan: bool = True) -> PointCollection:
     # Validate parameter
     if vc.get_dimension() != 1:
         raise ValueError('Maximum computation is only allowed for one-dimensional (scalar) vector collections.')
 
     if isinstance(vc, VectorCollection):
-        data = multiplier * vc.get_all_data()[:, 0, :, :]
+        data = vc.get_all_data()[:, 0, :, :]
         if ignore_nan:
             lat_idx, lon_idx = np.unravel_index(np.nanargmax(data), np.shape(data))[1:]
         else:
@@ -97,7 +138,7 @@ def arg_extremum_in_space_time_vector_collection(vc: VectorCollection | VirtualV
         lat_idx = None
         lon_idx = None
         for grid_in_time in vc.get_all_data_iter():
-            data = multiplier * grid_in_time[:, 0, :, :]
+            data = grid_in_time[:, 0, :, :]
             # Get this grid_in_time's max info
             if ignore_nan:
                 time_idx, this_lat_idx, this_lon_idx = np.unravel_index(np.nanargmax(data), np.shape(data))
@@ -114,28 +155,122 @@ def arg_extremum_in_space_time_vector_collection(vc: VectorCollection | VirtualV
     point_data = ((vc.latitude[lat_idx], vc.longitude[lon_idx]),)
 
     if ignore_nan:
-        title_prefix = f'Ignore Nan-{title} Loc. of ' + vc.title_prefix
+        title_prefix = f'Ignore-Nan Max Loc. of {vc}'
     else:
-        title_prefix = f'{title} Loc. of ' + vc.title_prefix
+        title_prefix = f'Max Loc. of {vc}'
 
     return PointCollection(vc.dataset, vc.variable, vc.time, (vc.time,), title_prefix, '', point_data)
 
 
-def arg_max_in_space_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool = True):
-    return arg_extremum_in_space_vector_collection(vc, ignore_nan, 1, 'Max')
+def arg_min_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                            ignore_nan: bool = True) -> PointCollection:
+    # Validate parameter
+    if vc.get_dimension() != 1:
+        raise ValueError('Maximum computation is only allowed for one-dimensional (scalar) vector collections.')
+
+    if isinstance(vc, VectorCollection):
+        data = vc.get_all_data()[:, 0, :, :]
+        if ignore_nan:
+            lat_idx, lon_idx = np.unravel_index(np.nanargmin(data), np.shape(data))[1:]
+        else:
+            lat_idx, lon_idx = np.unravel_index(np.argmin(data), np.shape(data))[1:]
+    else:
+        current_min = None
+        lat_idx = None
+        lon_idx = None
+        for grid_in_time in vc.get_all_data_iter():
+            data = grid_in_time[:, 0, :, :]
+            # Get this grid_in_time's min info
+            if ignore_nan:
+                time_idx, this_lat_idx, this_lon_idx = np.unravel_index(np.nanargmin(data), np.shape(data))
+            else:
+                time_idx, this_lat_idx, this_lon_idx = np.unravel_index(np.argmin(data), np.shape(data))
+            this_min = data[time_idx, this_lat_idx, this_lon_idx]
+
+            # If the min for this grid in time is bigger, make it the working min
+            if (current_min is None) or (this_min < current_min):
+                current_min = this_min
+                lat_idx = this_lat_idx
+                lon_idx = this_lon_idx
+
+    point_data = ((vc.latitude[lat_idx], vc.longitude[lon_idx]),)
+
+    if ignore_nan:
+        title_prefix = f'Ignore-Nan Min Loc. of {vc}'
+    else:
+        title_prefix = f'Min Loc. of {vc}'
+
+    return PointCollection(vc.dataset, vc.variable, vc.time, (vc.time,), title_prefix, '', point_data)
 
 
-def arg_min_in_space_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool = True):
-    return arg_extremum_in_space_vector_collection(vc, ignore_nan, -1, 'Min')
+# ======================================================================================================================
+# EXTREMUM (Value of the maximum / minimum)
+# ======================================================================================================================
+def max_in_time_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                  ignore_nan: bool = True) -> VectorCollection:
+    if isinstance(vc, VectorCollection):
+        if ignore_nan:
+            data = np.nanmax(vc.get_all_data(), axis=0)
+        else:
+            data = np.max(vc.get_all_data(), axis=0)
+    else:
+        data = None
+        if ignore_nan:
+            for grid_in_time in vc.get_all_data_iter():
+                if data is None:
+                    data = np.nanmax(grid_in_time, axis=0)
+                else:
+                    this_max = np.nanmax(grid_in_time, axis=0)
+                    data = np.nanmax(np.stack((data, this_max), axis=0), axis=0)
+        else:
+            for grid_in_time in vc.get_all_data_iter():
+                if data is None:
+                    data = np.max(grid_in_time, axis=0)
+                else:
+                    this_max = np.max(grid_in_time, axis=0)
+                    data = np.max(np.stack((data, this_max), axis=0), axis=0)
+    data = np.expand_dims(data, axis=0)
+
+    if ignore_nan:
+        title_prefix = f'Point-wise ignore-Nan Max of {vc} '
+    else:
+        title_prefix = f'Point-wise Max of {vc} '
+
+    return VectorCollection(vc.dataset, vc.variable, vc.time, (vc.time,), title_prefix, '', data, vc.latitude,
+                            vc.longitude)
 
 
-def arg_max_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool = True):
-    return arg_extremum_in_space_time_vector_collection(vc, ignore_nan, 1, 'Max')
+def min_in_time_vector_collection(vc: VectorCollection | VirtualVectorCollection,
+                                  ignore_nan: bool = True) -> VectorCollection:
+    if isinstance(vc, VectorCollection):
+        if ignore_nan:
+            data = np.nanmin(vc.get_all_data(), axis=0)
+        else:
+            data = np.min(vc.get_all_data(), axis=0)
+    else:
+        data = None
+        if ignore_nan:
+            for grid_in_time in vc.get_all_data_iter():
+                if data is None:
+                    data = np.nanmin(grid_in_time, axis=0)
+                else:
+                    this_min = np.nanmin(grid_in_time, axis=0)
+                    data = np.nanmin(np.stack((data, this_min), axis=0), axis=0)
+        else:
+            for grid_in_time in vc.get_all_data_iter():
+                if data is None:
+                    data = np.min(grid_in_time, axis=0)
+                else:
+                    this_min = np.min(grid_in_time, axis=0)
+                    data = np.min(np.stack((data, this_min), axis=0), axis=0)
+    data = np.expand_dims(data, axis=0)
 
+    if ignore_nan:
+        title_prefix = f'Point-wise ignore-Nan Min of {vc} '
+    else:
+        title_prefix = f'Point-wise Min of {vc} '
 
-def arg_min_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorCollection, ignore_nan: bool = True):
-    return arg_extremum_in_space_time_vector_collection(vc, ignore_nan, -1, 'Min')
-
-
+    return VectorCollection(vc.dataset, vc.variable, vc.time, (vc.time,), title_prefix, '', data, vc.latitude,
+                            vc.longitude)
 
 
