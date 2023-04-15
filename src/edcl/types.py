@@ -61,28 +61,6 @@ COORDINATES = ArrayLike
 PROJECTION = Projection
 
 
-# def grid_in_time_components(grid_in_time: GRID_IN_TIME) -> int:
-#     """
-#     Determine the number of components in a grid in time. A grid in time for scalars would yield 1 for example.
-#
-#     Assumes, from the type definition of GRID_IN_TIME, that each grid in the time tuple has the same number components.
-#
-#     Args:
-#         grid_in_time: The grid in time.
-#
-#     Returns:
-#         The number of components. Zero if the grid in time is empty or if its grids are empty.
-#     """
-#     if len(grid_in_time) == 0:
-#         return 0
-#     else:
-#         example_grid = grid_in_time[0]
-#         if isinstance(example_grid, tuple):
-#             return len(example_grid) # should always just be two
-#         else:
-#             return 1
-
-
 def time_is_supported(time: TIME) -> bool:
     """
     Whether the given time is supported. This is determined by the nullity of the time tuple elements.
