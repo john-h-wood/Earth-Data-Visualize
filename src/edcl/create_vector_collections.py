@@ -10,7 +10,7 @@ from .util import get_dataset_name, get_variable_name
 from .collections import VectorCollection, VirtualVectorCollection
 
 
-def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
+def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS] = None) -> \
                          VectorCollection:
     """
     Gathers grid data for a variable, dataset, time, and coordinate limits and returns it as a VectorCollection.
@@ -43,8 +43,8 @@ def get_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limi
                             longitude)
 
 
-def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS]) -> \
-                                 VirtualVectorCollection:
+def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TIME, limits: Optional[LIMITS] = None) \
+                                 -> VirtualVectorCollection:
     idx_limits = get_coordinate_information(dataset, limits)
     title_prefix = f'{dataset.name}: {variable.name} '
     time_stamps = get_time_stamps(dataset, variable, time)
@@ -61,7 +61,7 @@ def get_virtual_vector_collection(dataset: Dataset, variable: Variable, time: TI
 # ======================================================================================================================
 # CONVENIENCE FUNCTIONS
 # ======================================================================================================================
-def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS]) -> \
+def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS] = None) -> \
                                VectorCollection:
     """
     Convenience function which converts a dataset and variable name, time, and limits to a loaded vector collection via
@@ -81,8 +81,8 @@ def get_vector_collection_names(dataset_name: str, variable_name: str, time: TIM
     return get_vector_collection(dataset, variable, time, limits)
 
 
-def get_virtual_vector_collection_names(dataset_name: str, variable_name: str, time: TIME, limits: Optional[LIMITS])\
-                                        -> VirtualVectorCollection:
+def get_virtual_vector_collection_names(dataset_name: str, variable_name: str, time: TIME,
+                                        limits: Optional[LIMITS] = None) -> VirtualVectorCollection:
     """
     Convenience function which converts a dataset and variable name, time, and limits to a virtual vector collection via
     conversion methods and the get_vector_collection_method.
