@@ -1,3 +1,4 @@
 *.pickle
 *.png
 /src/edcl.egg-info
+/tests
