@@ -14,19 +14,19 @@ def time_average_vector_collection(vc: VectorCollection | VirtualVectorCollectio
         else:
             av_data = np.expand_dims(np.mean(vc.get_all_data(), axis=0), axis=0)
     else:
-        cumsum = np.zeros((vc.get_dimension(), len(vc.latitude), len(vc.longitude)))
+        cum_sum = np.zeros((vc.get_dimension(), len(vc.latitude), len(vc.longitude)))
         if ignore_nan:
             quan = np.zeros((vc.get_dimension(), len(vc.latitude), len(vc.longitude)))
             for block in vc.get_all_data_iter():
-                cumsum += np.nansum(block, axis=0)
+                cum_sum += np.nansum(block, axis=0)
                 quan += np.sum(np.logical_not(np.isnan(block)), axis=0)
-            av_data = np.expand_dims(cumsum / quan, axis=0)
+            av_data = np.expand_dims(cum_sum / quan, axis=0)
         else:
             quan = 0
             for block in vc.get_all_data_iter():
-                cumsum += np.sum(block, axis=0)
+                cum_sum += np.sum(block, axis=0)
                 quan += len(block)
-            av_data = np.expand_dims(cumsum / quan, axis=0)
+            av_data = np.expand_dims(cum_sum / quan, axis=0)
 
     if ignore_nan:
         title_prefix = 'Time Nan-Averaged ' + vc.title_prefix
@@ -91,4 +91,4 @@ def argmax_in_space_time_vector_collection(vc: VectorCollection | VirtualVectorC
         if ignore_nan:
             data = vc.get_all_data()[:, 0, :, :]
             lat_idx, lon_idx = np.unravel_index(np.nanargmax(data), np.shape(data))
-            point = vc.
+
