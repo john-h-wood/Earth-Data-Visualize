@@ -2,6 +2,7 @@
 The visualize module houses all functions which put data into visual formats.
 """
 import numpy as np
+from tqdm import tqdm
 import os.path as osp
 import cartopy.crs as ccrs
 from typing import Optional
@@ -96,9 +97,7 @@ def plot_data_collections(data_collections: DataCollection | tuple[DataCollectio
     plt.rcParams.update({'font.family': 'Times', 'font.size': font_size})
 
     # Pass through each time slice
-    for time_index in range(data_collections[0].get_time_length()):
-        print(f'Plotting figure {time_index + 1} of {data_collections[0].get_time_length()}')
-
+    for time_index in tqdm(range(data_collections[0].get_time_length()), desc='Plotting'):
         # Close all previous plots and initialize this one
         plt.close('all')
         fig = plt.figure(figsize=size, dpi=dpi)

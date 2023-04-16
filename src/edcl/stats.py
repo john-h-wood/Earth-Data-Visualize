@@ -2,6 +2,7 @@
 The stats module houses all functions relating to statistics on DataCollections.
 """
 import numpy as np
+from tqdm import tqdm
 
 from .types import VECTOR_GRID_IN_TIME, POINT
 from .collections import VectorCollection, VirtualVectorCollection, PointCollection
@@ -18,13 +19,13 @@ def time_average_vector_collection(vc: VectorCollection | VirtualVectorCollectio
         cum_sum = np.zeros((vc.get_dimension(), len(vc.latitude), len(vc.longitude)))
         if ignore_nan:
             quan = np.zeros((vc.get_dimension(), len(vc.latitude), len(vc.longitude)))
-            for block in vc.get_all_data_iter():
+            for block in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Time average'):
                 cum_sum += np.nansum(block, axis=0)
                 quan += np.sum(np.logical_not(np.isnan(block)), axis=0)
             av_data = np.expand_dims(cum_sum / quan, axis=0)
         else:
             quan = 0
-            for block in vc.get_all_data_iter():
+            for block in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Time average'):
                 cum_sum += np.sum(block, axis=0)
                 quan += len(block)
             av_data = np.expand_dims(cum_sum / quan, axis=0)
@@ -60,7 +61,7 @@ def arg_max_in_space_vector_collection(vc: VectorCollection | VirtualVectorColle
                 arg_max.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
 
     else:
-        for grid_in_time in vc.get_all_data_iter():
+        for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Arg max in space'):
             if ignore_nan:
                 for grid in grid_in_time:
                     # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
@@ -100,7 +101,7 @@ def arg_min_in_space_vector_collection(vc: VectorCollection | VirtualVectorColle
                 arg_min.append((vc.latitude[lat_idx], vc.longitude[lon_idx]))
 
     else:
-        for grid_in_time in vc.get_all_data_iter():
+        for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Arg min in space'):
             if ignore_nan:
                 for grid in grid_in_time:
                     # Index grid at zero to get rid of component axis. This leaves grid[0] as two-dimensional, lat, lon
@@ -137,7 +138,7 @@ def arg_max_in_space_time_vector_collection(vc: VectorCollection | VirtualVector
         current_max = None
         lat_idx = None
         lon_idx = None
-        for grid_in_time in vc.get_all_data_iter():
+        for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Arg max in space-time'):
             data = grid_in_time[:, 0, :, :]
             # Get this grid_in_time's max info
             if ignore_nan:
@@ -178,7 +179,7 @@ def arg_min_in_space_time_vector_collection(vc: VectorCollection | VirtualVector
         current_min = None
         lat_idx = None
         lon_idx = None
-        for grid_in_time in vc.get_all_data_iter():
+        for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Arg min in space-time'):
             data = grid_in_time[:, 0, :, :]
             # Get this grid_in_time's min info
             if ignore_nan:
@@ -216,14 +217,14 @@ def max_in_time_vector_collection(vc: VectorCollection | VirtualVectorCollection
     else:
         data = None
         if ignore_nan:
-            for grid_in_time in vc.get_all_data_iter():
+            for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Max in time'):
                 if data is None:
                     data = np.nanmax(grid_in_time, axis=0)
                 else:
                     this_max = np.nanmax(grid_in_time, axis=0)
                     data = np.nanmax(np.stack((data, this_max), axis=0), axis=0)
         else:
-            for grid_in_time in vc.get_all_data_iter():
+            for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Max in time'):
                 if data is None:
                     data = np.max(grid_in_time, axis=0)
                 else:
@@ -250,14 +251,14 @@ def min_in_time_vector_collection(vc: VectorCollection | VirtualVectorCollection
     else:
         data = None
         if ignore_nan:
-            for grid_in_time in vc.get_all_data_iter():
+            for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Min in time'):
                 if data is None:
                     data = np.nanmin(grid_in_time, axis=0)
                 else:
                     this_min = np.nanmin(grid_in_time, axis=0)
                     data = np.nanmin(np.stack((data, this_min), axis=0), axis=0)
         else:
-            for grid_in_time in vc.get_all_data_iter():
+            for grid_in_time in tqdm(vc.get_all_data_iter(), total=vc.get_block_count(), desc='Min in time'):
                 if data is None:
                     data = np.min(grid_in_time, axis=0)
                 else:

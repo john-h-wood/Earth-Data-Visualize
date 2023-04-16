@@ -5,6 +5,7 @@ files (available years, for example).
 """
 
 import numpy as np
+from tqdm import tqdm
 from glob import glob
 from scipy.io import loadmat
 from os.path import basename, isfile
@@ -347,7 +348,7 @@ def get_month_time_stamps(dataset: Dataset, variable: Variable, year: int, month
 
 def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME) -> TIME_STAMPS:
     """
-    Creates and returns timestamps for a dataset, variable, annd time. There is one time stamp for each index of
+    Creates and returns timestamps for a dataset, variable, and time. There is one time stamp for each index of
     the data's time axis.
 
     Time stamps are formatted as a tuple: (year, month, day, hour).
@@ -366,19 +367,20 @@ def get_time_stamps(dataset: Dataset, variable: Variable, time: TIME) -> TIME_ST
 
     if (range_month is not None) and (range_year is None):
         years = [x for x in get_years(dataset, None) if range_month in get_months(dataset, x, variable)]
-        for year in years:
+        for year in tqdm(years, desc='Time stamps'):
             time_stamps.extend(get_month_time_stamps(dataset, variable, year, range_month))
     elif range_year is None:
-        for year in get_years(dataset, variable):
+        for year in tqdm(get_years(dataset, variable), desc='Time stamps'):
             for month in get_months(dataset, year, variable):
                 time_stamps.extend(get_month_time_stamps(dataset, variable, year, month))
     elif range_month is None:
-        for month in get_months(dataset, range_year, variable):
+        for month in tqdm(get_months(dataset, range_year, variable), desc='Time stamps'):
             time_stamps.extend(get_month_time_stamps(dataset, variable, range_year, month))
     elif range_day is None:
-        time_stamps.extend(get_month_time_stamps(dataset, variable, range_year, range_month))
+        for _ in tqdm(range(1), desc='Time stamps'):
+            time_stamps.extend(get_month_time_stamps(dataset, variable, range_year, range_month))
     elif range_hour is None:
-        for hour in get_hours(dataset, variable, range_year, range_month, range_day):
+        for hour in tqdm(get_hours(dataset, variable, range_year, range_month, range_day), desc='Time stamps'):
             time_stamps.append((range_year, range_month, range_day, hour))
     else:
         time_stamps.append(time)
