@@ -120,6 +120,7 @@ class VirtualVectorCollection(DataCollection):
         self.latitude = latitude
         self.longitude = longitude
         self.idx_limits = idx_limits
+        self.block_count = len(self.get_block_times())
 
     def get_time_data(self, time_index: int) -> VECTOR_GRID:
         # Identify time
@@ -128,26 +129,27 @@ class VirtualVectorCollection(DataCollection):
         # Return 0-th index of re-shaped and interpreted data, since this data is in time
         return re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits))[0]
 
-    def get_all_data_iter(self):
+    def get_block_times(self) -> tuple[TIME]:
+        times = list()
         year, month, day, hour = self.time
         if (month is not None) and year is None:
             years = [x for x in get_years(self.dataset, None) if month in get_months(self.dataset, x, self.variable)]
             for year in years:
-                yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                          self.idx_limits))
+                times.append((year, month, None, None))
         elif year is None:
             for year in get_years(self.dataset, self.variable):
                 for month in get_months(self.dataset, year, self.variable):
-                    yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                              self.idx_limits))
-
+                    times.append((year, month, None, None))
         elif month is None:
             for month in get_months(self.dataset, year, self.variable):
-                yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, (year, month, None, None),
-                                                          self.idx_limits))
-
+                times.append((year, month, None, None))
         else:
-            yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, self.time, self.idx_limits))
+            times.append((year, month, day, hour))
+        return tuple(times)
+
+    def get_all_data_iter(self):
+        for time in self.get_block_times():
+            yield re_shape_grids(get_interpreted_grid(self.dataset, self.variable, time, self.idx_limits))
 
     def get_limits(self) -> LIMITS:
         """
@@ -160,6 +162,9 @@ class VirtualVectorCollection(DataCollection):
 
     def get_dimension(self) -> int:
         return self.variable.dimension
+
+    def get_block_count(self) -> int:
+        return self.block_count
 
 
 class PointCollection(DataCollection):
