@@ -54,7 +54,7 @@ DATA = VECTOR_GRID | POINT | PATH
 # A tuple of DATAs, all of the same type, each associated with a specific time
 DATA_IN_TIME = VECTOR_GRID_IN_TIME | POINT_IN_TIME | PATH_IN_TIME
 
-# Matrix of coordinates (latitude or longitude)
+# Vector of coordinates (latitude or longitude)
 COORDINATES = ArrayLike
 
 # Map projection from Cartopy

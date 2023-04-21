@@ -1,11 +1,11 @@
 """
-The stats module houses all functions relating to statistics on DataCollections.
+The extrema module houses all functions relating to finding the values and positions for the extrema of
+VectorCollections.
 """
 import numpy as np
 from tqdm import tqdm
 
-from .types import VECTOR_GRID_IN_TIME, POINT
-from .collections import VectorCollection, VirtualVectorCollection, PointCollection
+from edcl.collections import VectorCollection, VirtualVectorCollection, PointCollection
 
 
 def time_average_vector_collection(vc: VectorCollection | VirtualVectorCollection,
@@ -273,5 +273,3 @@ def min_in_time_vector_collection(vc: VectorCollection | VirtualVectorCollection
 
     return VectorCollection(vc.dataset, vc.variable, vc.time, (vc.time,), title_prefix, '', data, vc.latitude,
                             vc.longitude)
-
-
