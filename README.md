@@ -1,8 +1,8 @@
 # edcl-and-research
 
-This repository hosts the results of my work as a research assistant for Professor Kent Moore at the University of Toronto. Out of this work results two products: a package (edcl) for abstracting and plotting Earth data, and scripts leveraging this package for research into the extremity of tip jets off Cape Farewell, Greenland.
+This repository hosts my work as a research assistant for Professor Kent Moore at the University of Toronto. Out of this work results two unfinished products: a package (edcl) for abstracting and plotting Earth data, and scripts leveraging this package for research into the extremity of tip jets off Cape Farewell, Greenland.
 
-Note, the source code of the package may not contain all required citations. It is not publish-ready.
+Note, the source code of the package likely does not contain all required citations. It is not publish-ready.
 
 
 ## The Package
